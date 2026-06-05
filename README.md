@@ -1,6 +1,6 @@
 # DeliverX — Architecture Microservices
 
-DeliverX est une plateforme de livraison construite avec **Spring Boot 3.2.5**, **Spring Cloud Gateway** et **Netflix Eureka**. L'architecture repose sur des microservices indépendants qui s'enregistrent dynamiquement auprès du serveur de découverte Eureka.
+DeliverX est une plateforme de livraison construite avec **Spring Boot 3.2.5**, **Spring Cloud Gateway**, **Netflix Eureka** et **Spring Cloud Config Server**. L'architecture repose sur des microservices indépendants qui s'enregistrent dynamiquement auprès d'Eureka et récupèrent leur configuration centralisée depuis un dépôt Git.
 
 ## Architecture
 
@@ -8,6 +8,8 @@ DeliverX est une plateforme de livraison construite avec **Spring Boot 3.2.5**, 
 flowchart TB
     Client[Client HTTP] --> Gateway[Gateway :8090]
     Gateway --> Eureka[Eureka Server :8761]
+    ConfigServer[Config Server :8888] --> Eureka
+    GitRepo[config-repo Git] --> ConfigServer
 
     Gateway -->|"/assignment/**"| Assignment[Assignment :8081]
     Gateway -->|"/drivers/**"| DriverClient[DriverClient :8082]
@@ -16,6 +18,13 @@ flowchart TB
     Gateway -->|"/packages/**"| Package[Package :8085]
 
     Delivery -->|"OpenFeign"| Package
+
+    Gateway -->|fetch config| ConfigServer
+    Assignment -->|fetch config| ConfigServer
+    DriverClient -->|fetch config| ConfigServer
+    Vehicle -->|fetch config| ConfigServer
+    Delivery -->|fetch config| ConfigServer
+    Package -->|fetch config| ConfigServer
 
     Assignment --> Eureka
     DriverClient --> Eureka
@@ -30,12 +39,49 @@ flowchart TB
 | Dossier | Nom Eureka | Port | Rôle | Préfixe Gateway |
 |---------|------------|------|------|-----------------|
 | `eureka-server/` | eureka-server | 8761 | Service Discovery | — |
+| `config-server/` | CONFIG-SERVER | 8888 | Configuration centralisée | — |
 | `GateWay/` | Gateway | 8090 | API Gateway (routage) | — |
 | `assignment-service/` | ASSIGNMENT-SERVICE | 8081 | Gestion des affectations | `/assignment/**` |
 | `driver-client-service/` | DRIVER-CLIENT-SERVICE | 8082 | Chauffeurs et clients | `/drivers/**` |
 | `vehicle-service/` | VEHICLE-SERVICE | 8083 | Gestion des véhicules | `/vehicles/**` |
 | `delivery-service/` | DELIVERY-SERVICE | 8084 | Gestion des livraisons | `/deliveries/**` |
 | `package-service/` | PACKAGE-SERVICE | 8085 | Gestion des colis | `/packages/**` |
+
+## Spring Cloud Config Server
+
+La configuration des microservices (ports, Eureka, logging, actuator) est **externalisée** dans le dépôt Git [`config-repo/`](config-repo/).
+
+| Fichier Git | Application |
+|-------------|-------------|
+| `ASSIGNMENT-SERVICE.properties` | assignment-service |
+| `DRIVER-CLIENT-SERVICE.properties` | driver-client-service |
+| `VEHICLE-SERVICE.properties` | vehicle-service |
+| `DELIVERY-SERVICE.properties` | delivery-service |
+| `PACKAGE-SERVICE.properties` | package-service |
+| `Gateway.properties` | GateWay |
+
+Chaque client conserve un `application.properties` local minimal :
+
+```properties
+spring.application.name=ASSIGNMENT-SERVICE
+spring.config.import=optional:configserver:http://localhost:8888
+```
+
+Le Config Server lit le dépôt Git local en développement :
+
+```properties
+spring.cloud.config.server.git.uri=file:///${user.dir}/../config-repo
+```
+
+### Passer à un dépôt Git distant (production)
+
+1. Créer un repo GitHub/GitLab et pousser le contenu de `config-repo/`
+2. Modifier [`config-server/src/main/resources/application.properties`](config-server/src/main/resources/application.properties) :
+
+```properties
+spring.cloud.config.server.git.uri=https://github.com/votre-org/deliverx-config.git
+spring.cloud.config.server.git.default-label=main
+```
 
 ## Communication inter-services (OpenFeign)
 
@@ -62,6 +108,7 @@ sequenceDiagram
 
 - **JDK 17** (obligatoire — Spring Boot 3.x)
 - Maven (inclus via `mvnw` / `mvnw.cmd` dans chaque projet)
+- Git (pour le dépôt `config-repo/`)
 
 Vérifier Java :
 
@@ -82,7 +129,16 @@ cd eureka-server
 
 Dashboard : [http://localhost:8761](http://localhost:8761)
 
-### 2. Microservices (5 terminaux)
+### 2. Config Server (avant les microservices)
+
+```powershell
+cd config-server
+.\mvnw.cmd spring-boot:run
+```
+
+Test : [http://localhost:8888/ASSIGNMENT-SERVICE/default](http://localhost:8888/ASSIGNMENT-SERVICE/default)
+
+### 3. Microservices (5 terminaux)
 
 ```powershell
 cd assignment-service
@@ -111,7 +167,7 @@ cd delivery-service
 
 > **Important :** démarrer `package-service` avant `delivery-service` pour que la communication OpenFeign fonctionne.
 
-### 3. API Gateway (en dernier)
+### 4. API Gateway (en dernier)
 
 ```powershell
 cd GateWay
@@ -122,16 +178,32 @@ cd GateWay
 
 1. Ouvrir [http://localhost:8761](http://localhost:8761)
 2. Cliquer sur **"Instances currently registered with Eureka"**
-3. Vérifier que **6 instances** sont enregistrées :
+3. Vérifier que **7 instances** sont enregistrées :
 
 | Application | Statut attendu |
 |-------------|----------------|
+| CONFIG-SERVER | UP |
 | GATEWAY | UP |
 | ASSIGNMENT-SERVICE | UP |
 | DRIVER-CLIENT-SERVICE | UP |
 | VEHICLE-SERVICE | UP |
 | DELIVERY-SERVICE | UP |
 | PACKAGE-SERVICE | UP |
+
+## Tests Config Server
+
+```powershell
+curl http://localhost:8888/ASSIGNMENT-SERVICE/default
+curl http://localhost:8888/Gateway/default
+curl http://localhost:8888/DELIVERY-SERVICE/default
+```
+
+Réponse attendue : JSON avec `propertySources` contenant `server.port`, `eureka.client.*`, etc.
+
+Pour tester une modification centralisée :
+1. Modifier une propriété dans `config-repo/ASSIGNMENT-SERVICE.properties`
+2. Commit Git dans `config-repo/` : `git add . && git commit -m "update config"`
+3. Redémarrer Config Server puis le microservice concerné
 
 ## Tests via Gateway
 
@@ -199,7 +271,10 @@ Réponse attendue : **HTTP 404**
 ## Compilation
 
 ```powershell
-cd package-service
+cd config-server
+.\mvnw.cmd package -DskipTests
+
+cd ..\package-service
 .\mvnw.cmd package -DskipTests
 
 cd ..\delivery-service
@@ -212,6 +287,8 @@ cd ..\delivery-service
 DeliverX/
 ├── .gitignore
 ├── README.md
+├── config-repo/              # Dépôt Git de configuration
+├── config-server/
 ├── eureka-server/
 ├── GateWay/
 ├── assignment-service/
@@ -221,7 +298,7 @@ DeliverX/
 └── package-service/
 ```
 
-Chaque dossier est un **projet Spring Boot indépendant** avec son propre `pom.xml` et wrapper Maven.
+Chaque dossier de service est un **projet Spring Boot indépendant** avec son propre `pom.xml` et wrapper Maven.
 
 ## Stack technique
 
@@ -231,5 +308,6 @@ Chaque dossier est un **projet Spring Boot indépendant** avec son propre `pom.x
 | Spring Cloud | 2023.0.1 |
 | Java | 17 |
 | Netflix Eureka | Service Discovery |
+| Spring Cloud Config | Configuration centralisée (backend Git) |
 | Spring Cloud Gateway | API Gateway |
 | OpenFeign | Communication inter-services |
