@@ -17,12 +17,23 @@ public class GatewayApplication {
     }
 
     @Bean
-    public RouteLocator gatewayRoutes(RouteLocatorBuilder builder){
+    public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
         return builder.routes()
-                .route("Delievry",r->r.path("/delirvry/**")
-                        .uri("lb://DELIEVRY") )
-                .route("ms2", r->r.path("/ms2/**")
-                        .uri("lb://ms2") )
+                .route("assignment", r -> r.path("/assignment/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://ASSIGNMENT-SERVICE"))
+                .route("driver-client", r -> r.path("/drivers/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://DRIVER-CLIENT-SERVICE"))
+                .route("vehicle", r -> r.path("/vehicles/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://VEHICLE-SERVICE"))
+                .route("delivery", r -> r.path("/deliveries/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://DELIVERY-SERVICE"))
+                .route("package", r -> r.path("/packages/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://PACKAGE-SERVICE"))
                 .build();
     }
 
