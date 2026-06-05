@@ -67,21 +67,28 @@ spring.application.name=ASSIGNMENT-SERVICE
 spring.config.import=optional:configserver:http://localhost:8888
 ```
 
-Le Config Server lit le dépôt Git local en développement :
+Le Config Server lit la configuration depuis le dépôt GitHub public du projet :
 
 ```properties
-spring.cloud.config.server.git.uri=file:///${user.dir}/../config-repo
-```
-
-### Passer à un dépôt Git distant (production)
-
-1. Créer un repo GitHub/GitLab et pousser le contenu de `config-repo/`
-2. Modifier [`config-server/src/main/resources/application.properties`](config-server/src/main/resources/application.properties) :
-
-```properties
-spring.cloud.config.server.git.uri=https://github.com/votre-org/deliverx-config.git
+spring.cloud.config.server.git.uri=https://github.com/AzizHadrouk1/DeliverX.git
 spring.cloud.config.server.git.default-label=main
+spring.cloud.config.server.git.clone-on-start=true
+spring.cloud.config.server.git.search-paths=config-repo
 ```
+
+`search-paths=config-repo` indique au Config Server de chercher les fichiers `.properties` dans le sous-dossier `config-repo/` du monorepo DeliverX.
+
+### Mettre à jour la configuration (workflow production)
+
+1. Modifier un fichier dans `config-repo/` (ex. `ASSIGNMENT-SERVICE.properties`)
+2. Committer et pousser vers GitHub :
+   ```powershell
+   git add config-repo/
+   git commit -m "Update configuration"
+   git push origin main
+   ```
+3. Redémarrer **Config Server** (re-clone la branche `main`)
+4. Redémarrer le **microservice concerné**
 
 ## Communication inter-services (OpenFeign)
 
@@ -202,7 +209,7 @@ Réponse attendue : JSON avec `propertySources` contenant `server.port`, `eureka
 
 Pour tester une modification centralisée :
 1. Modifier une propriété dans `config-repo/ASSIGNMENT-SERVICE.properties`
-2. Commit Git dans `config-repo/` : `git add . && git commit -m "update config"`
+2. `git add config-repo/` puis `git commit -m "update config"` et `git push origin main`
 3. Redémarrer Config Server puis le microservice concerné
 
 ## Tests via Gateway
