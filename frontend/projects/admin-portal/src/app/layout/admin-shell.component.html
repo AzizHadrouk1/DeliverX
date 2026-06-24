@@ -1,0 +1,35 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand__mark">DX</span>
+      <div>
+        <strong>DeliverX</strong>
+        <small>Admin Portal</small>
+      </div>
+    </div>
+
+    <nav>
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/vehicles" routerLinkActive="active">Vehicles</a>
+      <a routerLink="/packages" routerLinkActive="active">Packages</a>
+      <a routerLink="/deliveries" routerLinkActive="active">Deliveries</a>
+      <a routerLink="/assignments" routerLinkActive="active">Assignments</a>
+      <a routerLink="/drivers" routerLinkActive="active">Drivers & Clients</a>
+    </nav>
+
+    <div class="sidebar__footer">
+      <p>{{ auth.user()?.name }}</p>
+      <button type="button" (click)="logout()">Logout</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <header class="topbar">
+      <p>Operations console for fleet, packages, and deliveries</p>
+      <a href="http://localhost:4200" target="_blank" rel="noreferrer">Client Portal</a>
+    </header>
+    <main>
+      <router-outlet />
+    </main>
+  </div>
+</div>

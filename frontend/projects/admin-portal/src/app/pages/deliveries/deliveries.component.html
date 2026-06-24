@@ -1,0 +1,36 @@
+<section>
+  <h1>Delivery orchestration</h1>
+  <p>Prepare a delivery by fetching package data through the delivery service (OpenFeign).</p>
+
+  <form class="toolbar" (ngSubmit)="prepare()">
+    <label>
+      Package ID
+      <input [(ngModel)]="packageId" name="packageId" required />
+    </label>
+    <button type="submit" class="btn">Prepare delivery</button>
+  </form>
+
+  @if (loading()) {
+    <lib-loading-state />
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (result(); as delivery) {
+    <article class="card">
+      <h2>{{ delivery.message }}</h2>
+      <p>{{ delivery.deliveryService }} · {{ delivery.communication }}</p>
+
+      <div class="package">
+        <div class="package__header">
+          <strong>{{ delivery.package.trackingNumber }}</strong>
+          <lib-status-badge [label]="delivery.package.status" [tone]="delivery.package.status | statusTone" />
+        </div>
+        <p>Destination: {{ delivery.package.destination }}</p>
+        <p>Weight: {{ delivery.package.weight }} kg</p>
+      </div>
+    </article>
+  }
+</section>

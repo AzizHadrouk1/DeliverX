@@ -14,7 +14,7 @@ public class HealthController {
     @Value("${welcome.message:Welcome to Vehicle MS}")
     private String welcomeMessage;
 
-    @GetMapping("/health")
+    @GetMapping({"/health", "/vehicles/health"})
     public Map<String, String> health() {
         return Map.of(
                 "status", "UP",

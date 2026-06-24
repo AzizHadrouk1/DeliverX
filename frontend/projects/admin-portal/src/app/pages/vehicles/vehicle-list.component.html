@@ -1,0 +1,67 @@
+<section>
+  <div class="header">
+    <div>
+      <h1>Fleet management</h1>
+      <p>Manage vehicles, capacity, and availability.</p>
+    </div>
+    <a routerLink="/vehicles/new" class="btn btn--primary">Add vehicle</a>
+  </div>
+
+  <div class="toolbar">
+    <label>
+      Filter by status
+      <select [(ngModel)]="selectedStatus" (change)="load()" name="status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (loading()) {
+    <lib-loading-state />
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Plate</th>
+            <th>Brand / Model</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Capacity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (vehicle of vehicles(); track vehicle.id) {
+            <tr>
+              <td>{{ vehicle.licensePlate }}</td>
+              <td>{{ vehicle.brand }} {{ vehicle.model }}</td>
+              <td>{{ vehicle.type }}</td>
+              <td>
+                <lib-status-badge [label]="vehicle.status" [tone]="vehicle.status | statusTone" />
+              </td>
+              <td>{{ vehicle.maxWeightCapacity }} kg / {{ vehicle.maxVolumeCapacity }} m³</td>
+              <td class="actions">
+                <a [routerLink]="['/vehicles', vehicle.id, 'edit']">Edit</a>
+                <button type="button" (click)="deleteVehicle(vehicle.id!)">Delete</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6">No vehicles found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

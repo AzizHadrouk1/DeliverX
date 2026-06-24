@@ -26,13 +26,11 @@ public class GatewayApplication {
                         .filters(f -> f.stripPrefix(1))
                         .uri("lb://DRIVER-CLIENT-SERVICE"))
                 .route("vehicle", r -> r.path("/vehicles/**")
-                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://VEHICLE-SERVICE"))
                 .route("delivery", r -> r.path("/deliveries/**")
                         .filters(f -> f.stripPrefix(1))
                         .uri("lb://DELIVERY-SERVICE"))
                 .route("package", r -> r.path("/packages/**")
-                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://PACKAGE-SERVICE"))
                 .build();
     }
