@@ -1,0 +1,29 @@
+<section>
+  <h1>System dashboard</h1>
+  <p>Monitor microservice health through the Spring Cloud Gateway.</p>
+
+  @if (loading()) {
+    <lib-loading-state message="Checking services..." />
+  } @else {
+    <div class="cards">
+      @for (service of services(); track service.name) {
+        <article [class.offline]="!service.online">
+          <div class="card__header">
+            <h2>{{ service.name }}</h2>
+            <lib-status-badge
+              [label]="service.online ? 'UP' : 'DOWN'"
+              [tone]="service.online ? 'success' : 'danger'"
+            />
+          </div>
+          <p>{{ service.path }}</p>
+          @if (service.status?.service) {
+            <small>{{ service.status?.service }}</small>
+          }
+          @if (service.error) {
+            <small class="error">{{ service.error }}</small>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

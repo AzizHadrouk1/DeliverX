@@ -1,0 +1,58 @@
+<section class="track">
+  <h1>Track your package</h1>
+  <p>Look up a package by its numeric ID from your confirmation email.</p>
+
+  <form class="search" (ngSubmit)="search()">
+    <input
+      type="text"
+      name="packageId"
+      [(ngModel)]="packageId"
+      placeholder="Package ID (e.g. 1)"
+      required
+    />
+    <button type="submit" class="btn btn--primary">Search</button>
+  </form>
+
+  @if (loading()) {
+    <lib-loading-state message="Fetching package details..." />
+  }
+
+  @if (error()) {
+    <div class="alert alert--error">{{ error() }}</div>
+  }
+
+  @if (pkg(); as package) {
+    <article class="result">
+      <div class="result__header">
+        <div>
+          <p class="label">Tracking number</p>
+          <h2>{{ package.trackingNumber }}</h2>
+        </div>
+        <lib-status-badge [label]="package.status" [tone]="package.status | statusTone" />
+      </div>
+
+      <dl class="grid">
+        <div>
+          <dt>Package ID</dt>
+          <dd>{{ package.id }}</dd>
+        </div>
+        <div>
+          <dt>Destination</dt>
+          <dd>{{ package.destination }}</dd>
+        </div>
+        <div>
+          <dt>Weight</dt>
+          <dd>{{ package.weight }} kg</dd>
+        </div>
+      </dl>
+
+      @if (delivery(); as deliveryInfo) {
+        <section class="delivery">
+          <h3>Delivery preparation</h3>
+          <p>{{ deliveryInfo.message }}</p>
+          <p class="meta">Service: {{ deliveryInfo.deliveryService }} · {{ deliveryInfo.communication }}</p>
+        </section>
+      }
+    </article>
+  }
+</section>
