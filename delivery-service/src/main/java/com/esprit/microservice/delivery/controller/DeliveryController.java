@@ -1,7 +1,7 @@
 package com.esprit.microservice.delivery.controller;
 
 import com.esprit.microservice.delivery.client.PackageClient;
-import com.esprit.microservice.delivery.model.PackageDTO;
+import com.esprit.microservice.delivery.dto.PackageDTO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;

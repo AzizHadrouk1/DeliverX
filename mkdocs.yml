@@ -1,0 +1,24 @@
+site_name: DeliverX Documentation
+site_description: Documentation technique de la plateforme DeliverX
+theme:
+  name: material
+  language: fr
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+nav:
+  - Accueil: index.md
+  - Architecture: architecture.md
+  - Microservices: microservices.md
+  - Bases de données: databases.md
+  - Docker: docker.md
+  - Démarrage: getting-started.md
+  - API Delivery Service: api/delivery-service.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - tables
+  - toc:
+      permalink: true
