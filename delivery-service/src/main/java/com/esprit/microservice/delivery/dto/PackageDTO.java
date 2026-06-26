@@ -1,4 +1,4 @@
-package com.esprit.microservice.delivery.model;
+package com.esprit.microservice.delivery.dto;
 
 public record PackageDTO(
         Long id,
