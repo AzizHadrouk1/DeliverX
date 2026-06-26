@@ -1,0 +1,28 @@
+<header class="header">
+  <div class="brand">
+    <span class="brand__mark">DX</span>
+    <div>
+      <strong>DeliverX</strong>
+      <small>Client Portal</small>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+    <a routerLink="/track" routerLinkActive="active">Track Package</a>
+    @if (auth.user()) {
+      <span class="user">{{ auth.user()?.name }}</span>
+      <button type="button" class="btn btn--ghost" (click)="auth.logout()">Logout</button>
+    } @else {
+      <a routerLink="/login" routerLinkActive="active">Login</a>
+    }
+  </nav>
+</header>
+
+<main class="main">
+  <router-outlet />
+</main>
+
+<footer class="footer">
+  <p>Need admin access? Open the <a href="http://localhost:4201" target="_blank" rel="noreferrer">Admin Portal</a>.</p>
+</footer>

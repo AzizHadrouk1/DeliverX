@@ -1,0 +1,25 @@
+<section>
+  <a routerLink="/packages">← Back to packages</a>
+
+  @if (loading()) {
+    <lib-loading-state />
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (pkg(); as package) {
+    <div class="detail">
+      <div class="detail__header">
+        <h1>{{ package.trackingNumber }}</h1>
+        <lib-status-badge [label]="package.status" [tone]="package.status | statusTone" />
+      </div>
+      <dl>
+        <div><dt>ID</dt><dd>{{ package.id }}</dd></div>
+        <div><dt>Destination</dt><dd>{{ package.destination }}</dd></div>
+        <div><dt>Weight</dt><dd>{{ package.weight }} kg</dd></div>
+      </dl>
+    </div>
+  }
+</section>
