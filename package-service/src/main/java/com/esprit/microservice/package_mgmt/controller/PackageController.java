@@ -1,37 +1,47 @@
 package com.esprit.microservice.package_mgmt.controller;
 
 import com.esprit.microservice.package_mgmt.model.PackageDTO;
+import com.esprit.microservice.package_mgmt.service.PackageService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/packages")
+@RequiredArgsConstructor
 public class PackageController {
 
-    private static final Map<Long, PackageDTO> PACKAGES = Map.of(
-            1L, new PackageDTO(1L, "DX-TRK-001", 2.5, "Tunis", "READY"),
-            2L, new PackageDTO(2L, "DX-TRK-002", 5.0, "Sfax", "IN_TRANSIT"),
-            3L, new PackageDTO(3L, "DX-TRK-003", 1.2, "Sousse", "DELIVERED")
-    );
+    private final PackageService packageService;
 
     @GetMapping
-    public Collection<PackageDTO> getAllPackages() {
-        return PACKAGES.values();
+    public ResponseEntity<List<PackageDTO>> getAllPackages() {
+        return ResponseEntity.ok(packageService.getAllPackages());
     }
 
     @GetMapping("/{id}")
-    public PackageDTO getPackage(@PathVariable Long id) {
-        PackageDTO pkg = PACKAGES.get(id);
-        if (pkg == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Package not found: " + id);
-        }
-        return pkg;
+    public ResponseEntity<PackageDTO> getPackageById(@PathVariable Long id) {
+        return ResponseEntity.ok(packageService.getPackageById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<PackageDTO> createPackage(@RequestBody PackageDTO packageDTO) {
+        PackageDTO created = packageService.createPackage(packageDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PackageDTO> updatePackage(
+            @PathVariable Long id,
+            @RequestBody PackageDTO packageDTO) {
+        return ResponseEntity.ok(packageService.updatePackage(id, packageDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePackage(@PathVariable Long id) {
+        packageService.deletePackage(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,10 +1,17 @@
 package com.esprit.microservice.package_mgmt.model;
 
-public record PackageDTO(
-        Long id,
-        String trackingNumber,
-        double weight,
-        String destination,
-        String status
-) {
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PackageDTO {
+
+    private Long id;
+    private String trackingNumber;
+    private double weight;
+    private String destination;
+    private String status;
 }
