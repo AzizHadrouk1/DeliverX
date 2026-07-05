@@ -23,6 +23,7 @@ export const routes: Routes = [
       { path: 'packages', loadComponent: () => import('./pages/packages/package-list.component').then(m => m.PackageListComponent) },
       { path: 'packages/:id', loadComponent: () => import('./pages/packages/package-detail.component').then(m => m.PackageDetailComponent) },
       { path: 'deliveries', loadComponent: () => import('./pages/deliveries/deliveries.component').then(m => m.DeliveriesComponent) },
+      { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking-map.component').then(m => m.TrackingMapComponent) },
       {
         path: 'assignments',
         component: ComingSoonComponent,

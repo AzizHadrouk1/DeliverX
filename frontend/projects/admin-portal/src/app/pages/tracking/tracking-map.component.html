@@ -1,0 +1,85 @@
+<div class="fleet-page">
+
+  <!-- Sidebar -->
+  <aside class="fleet-sidebar">
+    <div class="fleet-sidebar__head">
+      <h2>Live Fleet</h2>
+      <span class="fleet-count">{{ deliveries().length }} active</span>
+    </div>
+
+    @if (loading()) {
+      <div class="fleet-loading">
+        <div class="spinner"></div>
+        <p>Loading deliveries…</p>
+      </div>
+    }
+
+    <div class="fleet-list">
+      @for (d of deliveries(); track d.deliveryId) {
+        <button
+          class="fleet-item"
+          [class.fleet-item--selected]="selected()?.deliveryId === d.deliveryId"
+          (click)="selectDelivery(d)"
+          [id]="'fleet-item-' + d.deliveryId"
+        >
+          <div class="fleet-item__icon">{{ statusIcons[d.event.status] }}</div>
+          <div class="fleet-item__info">
+            <span class="fleet-item__id">Delivery #{{ d.deliveryId }}</span>
+            <span class="fleet-item__status fleet-item__status--{{ statusColor(d.event.status) }}">
+              {{ statusLabels[d.event.status] }}
+            </span>
+            <span class="fleet-item__coords">
+              {{ d.event.latitude.toFixed(4) }}, {{ d.event.longitude.toFixed(4) }}
+            </span>
+          </div>
+          <div class="fleet-item__time">{{ formatTime(d.event.timestamp) }}</div>
+        </button>
+      }
+
+      @if (!loading() && deliveries().length === 0) {
+        <div class="fleet-empty">
+          <span>🗺️</span>
+          <p>No active deliveries with tracking data.</p>
+        </div>
+      }
+    </div>
+
+    <!-- Selected delivery detail -->
+    @if (selected(); as sel) {
+      <div class="fleet-detail">
+        <h3>Delivery #{{ sel.deliveryId }}</h3>
+        <dl>
+          <dt>Status</dt>
+          <dd>{{ statusIcons[sel.event.status] }} {{ statusLabels[sel.event.status] }}</dd>
+          <dt>Coordinates</dt>
+          <dd class="mono">{{ sel.event.latitude.toFixed(5) }}, {{ sel.event.longitude.toFixed(5) }}</dd>
+          @if (sel.event.speed) {
+            <dt>Speed</dt>
+            <dd>{{ sel.event.speed.toFixed(0) }} km/h</dd>
+          }
+          @if (sel.event.heading) {
+            <dt>Heading</dt>
+            <dd>{{ sel.event.heading.toFixed(0) }}°</dd>
+          }
+          <dt>Last seen</dt>
+          <dd>{{ formatTime(sel.event.timestamp) }}</dd>
+        </dl>
+        <a [routerLink]="['/tracking', sel.deliveryId]" class="btn-detail">
+          View full tracking →
+        </a>
+      </div>
+    }
+  </aside>
+
+  <!-- Map -->
+  <div class="fleet-map-wrap">
+    <div #mapEl id="fleet-map" class="fleet-map"></div>
+    <div class="fleet-map__legend">
+      <span class="legend-dot legend-dot--orange"></span> In transit
+      <span class="legend-dot legend-dot--blue"></span> Out for delivery
+      <span class="legend-dot legend-dot--green"></span> Delivered
+      <span class="legend-dot legend-dot--red"></span> Failed
+    </div>
+  </div>
+
+</div>
