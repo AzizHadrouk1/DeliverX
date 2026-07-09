@@ -7,6 +7,8 @@ import com.esprit.microservice.driverclient.model.ClientType;
 import com.esprit.microservice.driverclient.service.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -58,6 +60,16 @@ public class ClientController {
     @GetMapping("/{id}")
     public Client getClient(@PathVariable Long id) {
         return clientService.findById(id);
+    }
+
+    @GetMapping("/me")
+    public Client getOwnProfile(@AuthenticationPrincipal Jwt jwt) {
+        return clientService.findByEmail(jwt.getClaimAsString("email"));
+    }
+
+    @PutMapping("/me")
+    public Client updateOwnProfile(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody Client client) {
+        return clientService.updateOwnProfile(jwt.getClaimAsString("email"), client);
     }
 
     @PostMapping({"/create", ""})

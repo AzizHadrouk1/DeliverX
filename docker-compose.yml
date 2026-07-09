@@ -30,6 +30,22 @@ services:
     networks:
       - deliverx-network
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/deliverx-realm.json:/opt/keycloak/data/import/deliverx-realm.json
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - deliverx-network
+
   mongodb:
     image: mongo:7
     container_name: mongodb
@@ -58,3 +74,4 @@ volumes:
   mysql_data:
   h2_data:
   mongodb_data:
+  keycloak_data:

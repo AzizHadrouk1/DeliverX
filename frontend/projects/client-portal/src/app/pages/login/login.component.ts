@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from 'shared';
+import { KeycloakSessionService } from '../../core/services/keycloak-session.service';
 
 @Component({
   selector: 'app-login',
@@ -11,20 +11,31 @@ import { AuthService } from 'shared';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  private readonly auth = inject(AuthService);
+  private readonly session = inject(KeycloakSessionService);
   private readonly router = inject(Router);
 
-  protected email = '';
+  protected username = 'client1';
   protected password = '';
   protected readonly error = signal<string | null>(null);
+  protected readonly loading = signal(false);
 
-  submit(): void {
-    const success = this.auth.login({ email: this.email, password: this.password }, 'CLIENT');
-    if (!success) {
-      this.error.set('Invalid credentials. Use any email with password "client".');
-      return;
+  async submit(): Promise<void> {
+    this.error.set(null);
+    this.loading.set(true);
+
+    try {
+      await this.session.loginWithPassword(this.username, this.password);
+
+      if (!this.session.roles.includes('user')) {
+        this.error.set('This account does not have client access.');
+        return;
+      }
+
+      this.router.navigate(['/track']);
+    } catch {
+      this.error.set('Invalid username or password.');
+    } finally {
+      this.loading.set(false);
     }
-
-    this.router.navigate(['/track']);
   }
 }

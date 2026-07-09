@@ -26,6 +26,8 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
 
     boolean existsByEmail(String email);
 
+    java.util.Optional<Client> findByEmail(String email);
+
     @Query("""
             SELECT c FROM Client c
             WHERE (:q IS NULL OR :q = '' OR

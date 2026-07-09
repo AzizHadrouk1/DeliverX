@@ -32,14 +32,12 @@ export const routes: Routes = [
           description: 'Driver assignment and workload balancing will be managed here.'
         }
       },
-      {
-        path: 'drivers',
-        component: ComingSoonComponent,
-        data: {
-          title: 'Drivers & clients',
-          description: 'Unified driver and client management will be available here.'
-        }
-      }
+      { path: 'drivers', loadComponent: () => import('./pages/drivers/driver-list.component').then(m => m.DriverListComponent) },
+      { path: 'drivers/new', loadComponent: () => import('./pages/drivers/driver-form.component').then(m => m.DriverFormComponent) },
+      { path: 'drivers/:id/edit', loadComponent: () => import('./pages/drivers/driver-form.component').then(m => m.DriverFormComponent) },
+      { path: 'clients', loadComponent: () => import('./pages/clients/client-list.component').then(m => m.ClientListComponent) },
+      { path: 'clients/new', loadComponent: () => import('./pages/clients/client-form.component').then(m => m.ClientFormComponent) },
+      { path: 'clients/:id/edit', loadComponent: () => import('./pages/clients/client-form.component').then(m => m.ClientFormComponent) }
     ]
   },
   { path: '**', redirectTo: 'dashboard' }
