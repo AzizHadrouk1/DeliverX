@@ -21,11 +21,11 @@ import java.util.List;
 public class ClientService {
 
     private final ClientRepository clientRepository;
-    private final ActionLogService actionLogService;
+    private final UniquenessGuard uniquenessGuard;
 
-    public ClientService(ClientRepository clientRepository, ActionLogService actionLogService) {
+    public ClientService(ClientRepository clientRepository, UniquenessGuard uniquenessGuard) {
         this.clientRepository = clientRepository;
-        this.actionLogService = actionLogService;
+        this.uniquenessGuard = uniquenessGuard;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +49,13 @@ public class ClientService {
     }
 
     @Transactional(readOnly = true)
+    public Client findByEmail(String email) {
+        return clientRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "No client record linked to this account: " + email));
+    }
+
+    @Transactional(readOnly = true)
     public List<Client> findByStatus(ClientStatus status) {
         return clientRepository.findByStatus(status);
     }
@@ -59,22 +66,18 @@ public class ClientService {
     }
 
     public Client create(Client client) {
-        if (clientRepository.existsByEmail(client.getEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Client with email already exists: " + client.getEmail());
-        }
-        Client saved = clientRepository.save(client);
-        actionLogService.log("system", "CREATE", "Client", saved.getId(), saved.getEmail());
-        return saved;
+        uniquenessGuard.check(clientRepository.existsByEmail(client.getEmail()),
+                "Client with email already exists: " + client.getEmail());
+
+        return clientRepository.save(client);
     }
 
     public Client update(Long id, Client updatedClient) {
         Client existing = findById(id);
 
-        if (!existing.getEmail().equals(updatedClient.getEmail())
-                && clientRepository.existsByEmail(updatedClient.getEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Client with email already exists: " + updatedClient.getEmail());
+        if (!existing.getEmail().equals(updatedClient.getEmail())) {
+            uniquenessGuard.check(clientRepository.existsByEmail(updatedClient.getEmail()),
+                    "Client with email already exists: " + updatedClient.getEmail());
         }
 
         existing.setFirstName(updatedClient.getFirstName());
@@ -87,9 +90,20 @@ public class ClientService {
         existing.setType(updatedClient.getType());
         existing.setStatus(updatedClient.getStatus());
 
-        Client saved = clientRepository.save(existing);
-        actionLogService.log("system", "UPDATE", "Client", saved.getId(), saved.getEmail());
-        return saved;
+        return clientRepository.save(existing);
+    }
+
+    public Client updateOwnProfile(String email, Client updatedClient) {
+        Client existing = findByEmail(email);
+
+        existing.setFirstName(updatedClient.getFirstName());
+        existing.setLastName(updatedClient.getLastName());
+        existing.setPhone(updatedClient.getPhone());
+        existing.setCompanyName(updatedClient.getCompanyName());
+        existing.setAddress(updatedClient.getAddress());
+        existing.setCity(updatedClient.getCity());
+
+        return clientRepository.save(existing);
     }
 
     public void delete(Long id) {
@@ -97,7 +111,6 @@ public class ClientService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Client not found: " + id);
         }
         clientRepository.deleteById(id);
-        actionLogService.log("system", "DELETE", "Client", id, null);
     }
 
     private PageResponse<Client> toPageResponse(Page<Client> page) {

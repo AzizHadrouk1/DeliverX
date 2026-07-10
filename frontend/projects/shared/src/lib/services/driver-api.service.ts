@@ -20,4 +20,20 @@ export class DriverApiService {
   getById(id: number): Observable<Driver> {
     return this.http.get<Driver>(`${this.baseUrl}/${id}`);
   }
+
+  create(driver: Driver): Observable<Driver> {
+    return this.http.post<Driver>(`${this.baseUrl}/create`, driver);
+  }
+
+  update(id: number, driver: Driver): Observable<Driver> {
+    return this.http.put<Driver>(`${this.baseUrl}/${id}`, driver);
+  }
+
+  updateStatus(id: number, status: DriverStatus): Observable<Driver> {
+    return this.http.post<Driver>(`${this.baseUrl}/${id}/status`, { status });
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 }

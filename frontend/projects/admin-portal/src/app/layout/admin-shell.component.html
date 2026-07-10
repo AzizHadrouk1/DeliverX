@@ -15,11 +15,12 @@
       <a routerLink="/deliveries" routerLinkActive="active">Deliveries</a>
       <a routerLink="/tracking" routerLinkActive="active" id="nav-tracking">🗺️ Live Tracking</a>
       <a routerLink="/assignments" routerLinkActive="active">Assignments</a>
-      <a routerLink="/drivers" routerLinkActive="active">Drivers & Clients</a>
+      <a routerLink="/drivers" routerLinkActive="active">Drivers</a>
+      <a routerLink="/clients" routerLinkActive="active">Clients</a>
     </nav>
 
     <div class="sidebar__footer">
-      <p>{{ auth.user()?.name }}</p>
+      <p>{{ keycloak.tokenParsed?.['preferred_username'] }}</p>
       <button type="button" (click)="logout()">Logout</button>
     </div>
   </aside>
