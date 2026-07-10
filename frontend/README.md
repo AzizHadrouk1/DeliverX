@@ -38,14 +38,19 @@ npm run start:admin
 - Client: http://localhost:4200
 - Admin: http://localhost:4201
 
-## Demo credentials
+## Demo credentials (Keycloak)
 
-| Portal | Email | Password |
-|--------|-------|----------|
-| Client | any valid email | `client` |
-| Admin | `admin@deliverx.com` | `admin` |
+Authentication is backed by **Keycloak** (realm `deliverx`): the login form performs a
+password grant against Keycloak, and an HTTP interceptor attaches the JWT to every
+request going through the Gateway. Route guards check the real client roles from the
+token (`resource_access.driver-client-service.roles`).
 
-Authentication is currently mocked on the frontend until Spring Security is integrated on the backend.
+| Portal | Username | Password | Role |
+|--------|----------|----------|------|
+| Admin | `admin1` | `admin123` | admin (full write access) |
+| Client | `client1` | `client123` | user (read-only / self-service) |
+
+Keycloak must be running (`docker compose up -d keycloak`) for login to work.
 
 ## Project structure
 
@@ -64,7 +69,7 @@ The `shared` library contains:
 - API services (`VehicleApiService`, `PackageApiService`, `DeliveryApiService`, `HealthApiService`)
 - TypeScript models aligned with backend DTOs
 - Reusable UI components (`StatusBadge`, `LoadingState`)
-- Mock `AuthService` for role-based portal access
+- Keycloak session services (password grant + refresh) and role-based route guards
 
 ## Features by portal
 

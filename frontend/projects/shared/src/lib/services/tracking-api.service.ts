@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../config/api.config';
-import { EtaResponse, RouteOptimizationResponse, TrackingEvent } from '../models/tracking.model';
+import { EtaResponse, LocationUpdateRequest, RouteOptimizationResponse, TrackingEvent } from '../models/tracking.model';
 
 @Injectable({ providedIn: 'root' })
 export class TrackingApiService {
@@ -12,6 +12,11 @@ export class TrackingApiService {
   /** Latest GPS position for a delivery */
   getLatestLocation(deliveryId: string): Observable<TrackingEvent> {
     return this.http.get<TrackingEvent>(`${this.base}/${deliveryId}/location`);
+  }
+
+  /** Push a real GPS fix (e.g. from navigator.geolocation) - broadcasts over WebSocket to live viewers */
+  pushLocation(deliveryId: string, update: LocationUpdateRequest): Observable<TrackingEvent> {
+    return this.http.post<TrackingEvent>(`${this.base}/${deliveryId}/location`, update);
   }
 
   /** Full event history (newest first) */
