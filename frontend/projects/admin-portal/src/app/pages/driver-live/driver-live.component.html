@@ -1,0 +1,56 @@
+<div class="driver-live">
+  <header>
+    <h1>📍 Driver mode</h1>
+    <p>Share this device's real GPS position live for a delivery, instead of the simulated route.</p>
+  </header>
+
+  <section class="card">
+    <label for="deliveryId">Delivery ID</label>
+    <input
+      id="deliveryId"
+      type="text"
+      [(ngModel)]="deliveryId"
+      [disabled]="sharing()"
+      placeholder="e.g. 1"
+    />
+
+    @if (!sharing()) {
+      <button type="button" class="btn-primary" (click)="start()">Start sharing location</button>
+    } @else {
+      <button type="button" class="btn-stop" (click)="stop()">Stop sharing</button>
+    }
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+  </section>
+
+  @if (sharing()) {
+    <section class="card status">
+      <p class="live-dot">🔴 Live - broadcasting position</p>
+      <dl>
+        <dt>Pings sent</dt>
+        <dd>{{ pingCount() }}</dd>
+
+        @if (lastPingAt()) {
+          <dt>Last update</dt>
+          <dd>{{ lastPingAt()?.toLocaleTimeString() }}</dd>
+        }
+
+        @if (lastFix(); as fix) {
+          <dt>Latitude</dt>
+          <dd>{{ fix.latitude | number: '1.5-5' }}</dd>
+          <dt>Longitude</dt>
+          <dd>{{ fix.longitude | number: '1.5-5' }}</dd>
+          <dt>Accuracy</dt>
+          <dd>±{{ fix.accuracy | number: '1.0-0' }} m</dd>
+        }
+      </dl>
+    </section>
+
+    <p class="hint">
+      Open <a routerLink="/tracking">Live Tracking</a> or the client portal's Track Package page
+      with the same delivery ID in another tab/device to see this position update in real time.
+    </p>
+  }
+</div>
