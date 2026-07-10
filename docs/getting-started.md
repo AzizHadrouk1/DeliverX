@@ -2,65 +2,151 @@
 
 ## Prérequis
 
-- Docker et Docker Compose
-- Java 17
-- Maven (ou Maven Wrapper inclus dans chaque service)
+| Outil | Version minimale | Usage |
+|-------|------------------|-------|
+| Docker Desktop | Compose v2 | Conteneurs (DB, Keycloak, stack complète) |
+| Java JDK | **17** | Microservices Spring Boot |
+| Maven | Wrapper inclus (`mvnw`) | Build / run local |
+| Node.js | **18+** | Frontend Angular (mode local) |
+| npm | fourni avec Node | Dépendances frontend |
+| Git | — | Cloner le dépôt |
+| Python + pip | 3.x | Documentation MkDocs (optionnel) |
 
-## 1. Démarrer les bases de données
+Vérifier :
 
-```bash
-docker compose up -d
+```powershell
+java -version
+docker --version
+docker compose version
+node -v
+npm -v
 ```
 
-Attendre que MySQL soit prêt (~30 secondes).
+---
 
-## 2. Démarrer l'infrastructure Spring Cloud
+## Mode 1 — Docker full-stack (recommandé)
 
-Dans l'ordre :
+Depuis la racine du dépôt :
 
-```bash
-cd eureka-server && mvnw spring-boot:run
-cd config-server && mvnw spring-boot:run
+```powershell
+docker compose up -d --build
 ```
 
-## 3. Démarrer les microservices
+Attendre que Eureka, Config Server, Keycloak et les microservices soient healthy (~2–5 min au premier build).
 
-```bash
-cd package-service && mvnw spring-boot:run
-cd delivery-service && mvnw spring-boot:run
-cd vehicle-service && mvnw spring-boot:run
-# ... autres services
-cd GateWay && mvnw spring-boot:run
+### URLs après démarrage
+
+| Service | URL |
+|---------|-----|
+| Eureka | http://localhost:8761 |
+| Keycloak Admin | http://localhost:8080 (admin / admin) |
+| Gateway | http://localhost:8090 |
+| Client portal | http://localhost:4200 |
+| Admin portal | http://localhost:4201 |
+| Documentation MkDocs | http://localhost:8000 |
+| **Swagger Gateway (tous les APIs)** | **http://localhost:8090/swagger** |
+| Swagger Gateway (ancien lien) | http://localhost:8090/swagger-ui.html (redirect) |
+| Delivery Swagger (direct) | http://localhost:8084/swagger-ui.html |
+| Tracking Swagger (direct) | http://localhost:8086/swagger-ui.html |
+
+### Comptes démo Keycloak
+
+| Utilisateur | Mot de passe | Rôle | Portail |
+|-------------|--------------|------|---------|
+| `admin1` | `admin123` | admin | Admin (:4201) |
+| `client1` | `client123` | user | Client (:4200) |
+
+### Smoke tests
+
+```powershell
+curl http://localhost:8090/assignment/health
+curl http://localhost:8090/drivers/health
+curl http://localhost:8090/vehicles/health
+curl http://localhost:8090/deliveries/health
+curl http://localhost:8090/packages/health
+curl http://localhost:8090/tracking/health
 ```
 
-Sous Windows PowerShell, utilisez `.\mvnw.cmd` à la place de `mvnw`.
+### Swagger — erreur « Service Unavailable /aggregated-docs/... »
 
-## 4. Construire un service
+Cela signifie que le **Gateway ne trouve pas le microservice dans Eureka** (service arrêté ou Eureka redémarré pendant que le service tournait).
 
-```bash
-cd delivery-service
-mvnw clean package -DskipTests
+```powershell
+docker compose ps
+# Vérifier DELIVERY-SERVICE sur http://localhost:8761
+docker compose restart delivery-service
+curl http://localhost:8090/aggregated-docs/delivery
 ```
 
-## 5. Documentation MkDocs
+Puis recharger http://localhost:8090/swagger
 
-```bash
-pip install mkdocs mkdocs-material
+### Arrêt
+
+```powershell
+docker compose down
+# Avec suppression des volumes :
+docker compose down -v
+```
+
+---
+
+## Mode 2 — Développement local (hybride)
+
+### 1. Bases + Keycloak uniquement
+
+```powershell
+docker compose up -d mysql h2 mongodb keycloak
+```
+
+### 2. Infrastructure Spring Cloud
+
+```powershell
+cd eureka-server
+.\mvnw.cmd spring-boot:run
+
+cd ..\config-server
+.\mvnw.cmd spring-boot:run
+```
+
+### 3. Microservices (terminaux séparés)
+
+Ordre conseillé : package → delivery → vehicle → driver-client → assignment → tracking → Gateway.
+
+```powershell
+cd package-service
+.\mvnw.cmd spring-boot:run
+```
+
+Répéter pour chaque service. Le Gateway en dernier :
+
+```powershell
+cd GateWay
+.\mvnw.cmd spring-boot:run
+```
+
+!!! note "Port driver-client"
+    En local le service écoute sur **8082**. En Docker le port hôte est **8087** (`8087:8082`).
+
+### 4. Frontend
+
+```powershell
+cd frontend
+npm install
+npm run start:client   # http://localhost:4200
+npm run start:admin    # http://localhost:4201 (autre terminal)
+```
+
+---
+
+## Documentation MkDocs
+
+Avec Docker, la documentation est disponible sur **http://localhost:8000** (service `docs`).
+
+En local (sans le conteneur) :
+
+```powershell
+pip install mkdocs mkdocs-material pymdown-extensions
 mkdocs serve
 ```
 
-Ouvrir `http://127.0.0.1:8000`.
-
-## 6. Frontend (optionnel)
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-## Vérification
-
-- Eureka : `http://localhost:8761`
-- Gateway health : `http://localhost:8090/deliveries/health`
-- Delivery Swagger : `http://localhost:8084/swagger-ui.html`
+Ouvrir http://127.0.0.1:8000

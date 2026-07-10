@@ -1,5 +1,5 @@
 site_name: DeliverX Documentation
-site_description: Documentation technique de la plateforme DeliverX
+site_description: Documentation technique complète de la plateforme DeliverX
 theme:
   name: material
   language: fr
@@ -7,17 +7,39 @@ theme:
     - scheme: default
       primary: indigo
       accent: indigo
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Mode sombre
 nav:
   - Accueil: index.md
   - Architecture: architecture.md
-  - Microservices: microservices.md
-  - Bases de données: databases.md
-  - Docker: docker.md
   - Démarrage: getting-started.md
-  - API Delivery Service: api/delivery-service.md
+  - Docker: docker.md
+  - Bases de données: databases.md
+  - Communication inter-services: communication.md
+  - Authentification Keycloak: auth-keycloak.md
+  - Frontend: frontend.md
+  - Microservices:
+      - Vue d'ensemble: microservices.md
+      - Assignment Service: services/assignment-service.md
+      - Driver & Client Service: services/driver-client-service.md
+      - Vehicle Service: services/vehicle-service.md
+      - Delivery Service: services/delivery-service.md
+      - Package Service: services/package-service.md
+      - Tracking Service: services/tracking-service.md
+  - API Delivery (exemples): api/delivery-service.md
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - codehilite
   - tables
   - toc:

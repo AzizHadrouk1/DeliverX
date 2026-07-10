@@ -1,21 +1,48 @@
 # DeliverX
 
-DeliverX est une plateforme de livraison basée sur une architecture microservices Spring Boot.
+DeliverX est une plateforme de livraison construite en **architecture microservices** avec Spring Boot, Spring Cloud et Angular.
 
-## Contenu de la documentation
+## Stack technique
 
-- [Architecture](architecture.md) — vue d'ensemble du système
-- [Microservices](microservices.md) — liste des services et leurs rôles
-- [Bases de données](databases.md) — MySQL, H2, MongoDB par service
-- [Docker](docker.md) — conteneurs et commandes
-- [Démarrage](getting-started.md) — installation et lancement
-- [API Delivery Service](api/delivery-service.md) — endpoints et exemples
+| Composant | Technologie |
+|-----------|-------------|
+| Backend | Spring Boot 3.2.5, Java 17 |
+| Discovery | Netflix Eureka |
+| Configuration | Spring Cloud Config Server |
+| API Gateway | Spring Cloud Gateway |
+| Authentification | Keycloak 25 (realm `deliverx`) |
+| Communication sync | OpenFeign |
+| Temps réel | WebSocket STOMP (tracking) |
+| Frontend | Angular 19 (client + admin) |
+| Bases de données | MySQL 8, H2, MongoDB 7 |
+
+## Documentation
+
+| Page | Contenu |
+|------|---------|
+| [Architecture](architecture.md) | Vue d'ensemble du système |
+| [Démarrage](getting-started.md) | Prérequis et lancement |
+| [Docker](docker.md) | Conteneurs et ports |
+| [Bases de données](databases.md) | Schémas et credentials |
+| [Communication](communication.md) | OpenFeign et WebSocket |
+| [Keycloak](auth-keycloak.md) | Auth JWT et rôles |
+| [Frontend](frontend.md) | Portails Angular |
+| [Microservices](microservices.md) | Catalogue des services |
 
 ## Démarrage rapide
 
 ```bash
-docker compose up -d
-cd delivery-service && mvnw spring-boot:run
+docker compose up -d --build
 ```
 
-Documentation interactive : `mkdocs serve` puis ouvrir `http://127.0.0.1:8000`.
+Puis ouvrir :
+
+- Client portal : http://localhost:4200
+- Admin portal : http://localhost:4201
+- Eureka : http://localhost:8761
+- Keycloak : http://localhost:8080
+- Documentation : http://localhost:8000
+
+Comptes démo : `admin1` / `admin123` (admin) · `client1` / `client123` (user)
+
+Documentation interactive : **http://localhost:8000** (Docker) ou `mkdocs serve` en local.
