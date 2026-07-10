@@ -1,8 +1,13 @@
 package com.esprit.microservice.assignment.controller;
 
 
-import com.esprit.microservice.assignment.model.Assignment;
+import com.esprit.microservice.assignment.dto.AssignmentDTO;
+import com.esprit.microservice.assignment.dto.AssignmentResponseDTO;
+import com.esprit.microservice.assignment.dto.StatusUpdateDTO;
+import com.esprit.microservice.assignment.model.AssignmentStatus;
 import com.esprit.microservice.assignment.service.AssignmentService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,52 +24,60 @@ public class AssignmentController {
     }
 
     @GetMapping
-    public List<Assignment> getAllAssignments() {
+    public List<AssignmentResponseDTO> getAllAssignments() {
         return service.getAllAssignments();
     }
 
     @GetMapping("/{id}")
-    public Assignment getAssignmentById(@PathVariable Long id) {
+    public AssignmentResponseDTO getAssignmentById(@PathVariable Long id) {
         return service.getAssignmentById(id);
     }
 
     @PostMapping
-    public Assignment createAssignment(
-            @RequestBody Assignment assignment) {
-
-        return service.createAssignment(assignment);
+    @ResponseStatus(HttpStatus.CREATED)
+    public AssignmentResponseDTO createAssignment(@Valid @RequestBody AssignmentDTO dto) {
+        return service.createAssignment(dto);
     }
 
     @PutMapping("/{id}")
-    public Assignment updateAssignment(
+    public AssignmentResponseDTO updateAssignment(
             @PathVariable Long id,
-            @RequestBody Assignment assignment) {
+            @Valid @RequestBody AssignmentDTO dto) {
 
-        return service.updateAssignment(id, assignment);
+        return service.updateAssignment(id, dto);
+    }
+
+    @PatchMapping("/{id}/status")
+    public AssignmentResponseDTO updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody StatusUpdateDTO statusUpdate) {
+
+        return service.updateStatus(id, statusUpdate);
     }
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAssignment(@PathVariable Long id) {
         service.deleteAssignment(id);
     }
 
     @GetMapping("/driver/{driverId}")
-    public List<Assignment> getAssignmentsByDriver(
+    public List<AssignmentResponseDTO> getAssignmentsByDriver(
             @PathVariable Long driverId) {
 
         return service.getAssignmentsByDriver(driverId);
     }
 
     @GetMapping("/delivery/{deliveryId}")
-    public List<Assignment> getAssignmentsByDelivery(
+    public List<AssignmentResponseDTO> getAssignmentsByDelivery(
             @PathVariable Long deliveryId) {
 
         return service.getAssignmentsByDelivery(deliveryId);
     }
 
     @GetMapping("/status/{status}")
-    public List<Assignment> getAssignmentsByStatus(
-            @PathVariable String status) {
+    public List<AssignmentResponseDTO> getAssignmentsByStatus(
+            @PathVariable AssignmentStatus status) {
 
         return service.getAssignmentsByStatus(status);
     }

@@ -1,32 +1,18 @@
-package com.esprit.microservice.assignment.model;
+package com.esprit.microservice.assignment.dto;
 
+import com.esprit.microservice.assignment.model.AssignmentStatus;
 
-
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "assignments")
-public class Assignment {
+public class AssignmentResponseDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private Long deliveryId;
-
     private Long driverId;
-
     private Long vehicleId;
-
-    @Enumerated(EnumType.STRING)
     private AssignmentStatus status;
-
     private LocalDateTime assignedAt;
-
     private LocalDateTime updatedAt;
-
-    public Assignment() {}
 
     public Long getId() {
         return id;
