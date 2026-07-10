@@ -1,5 +1,6 @@
-package com.esprit.microservice.assignment.exception;
+package com.esprit.microservice.assignment.controller;
 
+import com.esprit.microservice.assignment.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -7,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -14,29 +16,10 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AssignmentNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(AssignmentNotFoundException ex, WebRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(InvalidStatusTransitionException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidTransition(InvalidStatusTransitionException ex, WebRequest request) {
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(AssignmentAlreadyFinalizedException.class)
-    public ResponseEntity<ErrorResponse> handleAlreadyFinalized(AssignmentAlreadyFinalizedException ex, WebRequest request) {
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex, WebRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(ExternalServiceException.class)
-    public ResponseEntity<ErrorResponse> handleExternalService(ExternalServiceException ex, WebRequest request) {
-        return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        return buildResponse(status, ex.getReason(), request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

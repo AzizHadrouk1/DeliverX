@@ -1,4 +1,104 @@
 services:
+ 
+  eureka-server:
+    build:
+      context: ./eureka-server
+    container_name: eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - deliverx-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8761' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/deliverx-realm.json:/opt/keycloak/data/import/deliverx-realm.json
+      - ./docker/keycloak/themes/deliverx:/opt/keycloak/themes/deliverx
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      # No curl/wget in the image; bash TCP probe on the HTTP port.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  config-server:
+    build:
+      context: ./config-server
+    container_name: config-server
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS: file:/config-repo/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    volumes:
+      - ./config-repo:/config-repo:ro
+    ports:
+      - "8888:8888"
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8888' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  gateway:
+    build:
+      context: ./GateWay
+    container_name: gateway
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8090
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      # issuer-uri stays localhost:8080 (matches the "iss" claim on tokens issued
+      # to a client requesting them from the host) - only the key-fetch URL needs
+      # to resolve on the Docker network.
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/deliverx/protocol/openid-connect/certs
+    ports:
+      - "8090:8090"
+    networks:
+      - deliverx-network
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  # ── Infrastructure (databases, message broker) ──────────────────────────
+
   mysql:
     image: mysql:8.0
     container_name: mysql
@@ -30,22 +130,6 @@ services:
     networks:
       - deliverx-network
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:25.0
-    container_name: keycloak
-    restart: unless-stopped
-    command: ["start-dev", "--import-realm"]
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./docker/keycloak/deliverx-realm.json:/opt/keycloak/data/import/deliverx-realm.json
-      - keycloak_data:/opt/keycloak/data
-    networks:
-      - deliverx-network
-
   mongodb:
     image: mongo:7
     container_name: mongodb
@@ -66,73 +150,25 @@ services:
       timeout: 5s
       retries: 5
 
-  eureka-server:
-    build:
-      context: ./eureka-server
-    container_name: eureka-server
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
     restart: unless-stopped
     ports:
-      - "8761:8761"
-    networks:
-      - deliverx-network
-    healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8761' || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-  config-server:
-    build:
-      context: ./config-server
-    container_name: config-server
-    restart: unless-stopped
-    environment:
-      SPRING_PROFILES_ACTIVE: native
-      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS: file:/config-repo/
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      - "5672:5672"
+      - "15672:15672"
     volumes:
-      - ./config-repo:/config-repo:ro
-    ports:
-      - "8888:8888"
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - deliverx-network
-    depends_on:
-      eureka-server:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8888' || exit 1"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 20s
 
-  gateway:
-    build:
-      context: ./GateWay
-    container_name: gateway
-    restart: unless-stopped
-    environment:
-      SERVER_PORT: 8090
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      # issuer-uri stays localhost:8080 (matches the "iss" claim on tokens issued
-      # to a client requesting them from the host) - only the key-fetch URL needs
-      # to resolve on the Docker network.
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/deliverx/protocol/openid-connect/certs
-    ports:
-      - "8090:8090"
-    networks:
-      - deliverx-network
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      config-server:
-        condition: service_healthy
-      keycloak:
-        condition: service_started
+  # ── Business microservices ───────────────────────────────────────────────
 
   assignment-service:
     build:
@@ -144,6 +180,8 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
     ports:
       - "8081:8081"
     networks:
@@ -152,6 +190,8 @@ services:
       eureka-server:
         condition: service_healthy
       config-server:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   vehicle-service:
@@ -208,7 +248,7 @@ services:
       config-server:
         condition: service_healthy
       keycloak:
-        condition: service_started
+        condition: service_healthy
 
   package-service:
     build:
@@ -243,6 +283,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/delivery_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: delivery_user
       SPRING_DATASOURCE_PASSWORD: delivery_pass
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
     ports:
       - "8084:8084"
     networks:
@@ -253,6 +295,8 @@ services:
       eureka-server:
         condition: service_healthy
       config-server:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   tracking-service:
@@ -265,12 +309,10 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      SPRING_DATA_MONGODB_HOST: mongodb
-      SPRING_DATA_MONGODB_PORT: "27017"
-      SPRING_DATA_MONGODB_DATABASE: tracking_db
-      SPRING_DATA_MONGODB_USERNAME: tracking_user
-      SPRING_DATA_MONGODB_PASSWORD: tracking_pass
-      SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+      # config-repo/TRACKING-SERVICE.properties sets spring.data.mongodb.uri (not
+      # host/port), and Spring Data Mongo ignores host/port once a uri is present -
+      # so the uri itself must be overridden here, not the individual host/port vars.
+      SPRING_DATA_MONGODB_URI: mongodb://tracking_user:tracking_pass@mongodb:27017/tracking_db?authSource=admin
     ports:
       - "8086:8086"
     networks:
@@ -282,6 +324,8 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
+
+  # ── Frontend portals ─────────────────────────────────────────────────────
 
   admin-portal:
     build:
@@ -309,15 +353,27 @@ services:
     depends_on:
       - gateway
 
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: docs
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    networks:
+      - deliverx-network
+
 networks:
   deliverx-network:
-    driver: bridge
+    driver: bridge    
 
 volumes:
   mysql_data:
   h2_data:
   mongodb_data:
   keycloak_data:
+  rabbitmq_data:
   vehicle_data:
   driver_client_data:
   driver_client_uploads:
