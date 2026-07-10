@@ -5,6 +5,7 @@ import { forkJoin } from 'rxjs';
 import {
   Assignment,
   AssignmentApiService,
+  AssignmentDetails,
   AssignmentStatus,
   DriverApiService,
   LoadingStateComponent,
@@ -27,11 +28,20 @@ export class AssignmentListComponent implements OnInit {
 
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly notice = signal<string | null>(null);
   protected readonly assignments = signal<Assignment[]>([]);
   protected readonly driverNames = signal<Record<number, string>>({});
   protected readonly vehiclePlates = signal<Record<number, string>>({});
 
+  protected readonly detailsFor = signal<number | null>(null);
+  protected readonly details = signal<AssignmentDetails | null>(null);
+  protected readonly detailsLoading = signal(false);
+
   ngOnInit(): void {
+    const notice = history.state?.['notice'];
+    if (notice) {
+      this.notice.set(notice);
+    }
     this.load();
   }
 
@@ -67,6 +77,30 @@ export class AssignmentListComponent implements OnInit {
     return this.vehiclePlates()[id] ?? `#${id}`;
   }
 
+  toggleDetails(assignment: Assignment): void {
+    if (this.detailsFor() === assignment.id) {
+      this.detailsFor.set(null);
+      this.details.set(null);
+      return;
+    }
+
+    this.detailsFor.set(assignment.id!);
+    this.details.set(null);
+    this.detailsLoading.set(true);
+
+    this.assignmentApi.getDetails(assignment.id!).subscribe({
+      next: (details) => {
+        this.details.set(details);
+        this.detailsLoading.set(false);
+      },
+      error: () => {
+        this.error.set('Unable to load assignment details (driver / vehicle / delivery services).');
+        this.detailsFor.set(null);
+        this.detailsLoading.set(false);
+      }
+    });
+  }
+
   canStart(assignment: Assignment): boolean {
     return assignment.status === 'ASSIGNED';
   }
@@ -85,7 +119,14 @@ export class AssignmentListComponent implements OnInit {
 
   updateStatus(assignment: Assignment, status: AssignmentStatus): void {
     this.assignmentApi.updateStatus(assignment.id!, status).subscribe({
-      next: () => this.load(),
+      next: () => {
+        this.notice.set(
+          `Assignment #${assignment.id} is now ${status}. The delivery status is synced automatically in the background.`
+        );
+        this.detailsFor.set(null);
+        this.details.set(null);
+        this.load();
+      },
       error: () => this.error.set('Failed to update assignment status.')
     });
   }

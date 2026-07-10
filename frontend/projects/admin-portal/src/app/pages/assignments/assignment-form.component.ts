@@ -42,7 +42,7 @@ export class AssignmentFormComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    this.deliveryApi.getAll('PENDING').subscribe({
+    this.deliveryApi.getAll().subscribe({
       next: (page) => this.deliveries.set(page.content)
     });
     this.driverApi.getAll('AVAILABLE').subscribe({
@@ -72,7 +72,14 @@ export class AssignmentFormComponent implements OnInit {
       : this.assignmentApi.create(this.assignment);
 
     request.subscribe({
-      next: () => this.router.navigate(['/assignments']),
+      next: () =>
+        this.router.navigate(['/assignments'], {
+          state: {
+            notice: this.isEdit
+              ? `Assignment #${this.assignmentId} updated.`
+              : 'Assignment created. The delivery is being marked ASSIGNED automatically in the background.'
+          }
+        }),
       error: (err) => {
         this.error.set(err?.error?.message ?? 'Unable to save assignment. Check driver/vehicle availability.');
         this.saving.set(false);
