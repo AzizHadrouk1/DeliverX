@@ -1,297 +1,221 @@
 # DeliverX — Plateforme de livraison Microservices
 
-DeliverX est une plateforme de livraison construite avec **Spring Boot 3.2.5**, **Spring Cloud Gateway**, **Netflix Eureka** et **Spring Cloud Config Server**.
+DeliverX est une plateforme de livraison en architecture microservices : **Spring Boot 3.2.5**, **Spring Cloud** (Eureka, Config, Gateway), **Keycloak**, **Angular 19**, MySQL / H2 / MongoDB.
+
+Documentation détaillée : http://localhost:8000 (conteneur `docs` via Docker) ou dossier [`docs/`](docs/) en local.
+
+---
 
 ## Prérequis
 
-- **Docker** et **Docker Compose**
-- **Java 17** (JDK obligatoire pour Spring Boot 3.x)
-- **Maven** (ou Maven Wrapper `mvnw` / `mvnw.cmd` inclus dans chaque service)
-
-Vérifier les installations :
+| Outil | Version | Pourquoi |
+|-------|---------|----------|
+| **Docker Desktop** + Compose v2 | récent | Bases, Keycloak, stack complète |
+| **JDK 17** | obligatoire | Spring Boot 3.x |
+| **Maven** | wrapper `mvnw` inclus | Build / run local des services |
+| **Node.js** | 18+ | Frontend Angular (mode local) |
+| **npm** | avec Node | Dépendances frontend |
+| **Git** | — | Cloner le dépôt |
+| Python + pip (optionnel) | 3.x | Documentation MkDocs |
 
 ```powershell
 java -version
 docker --version
 docker compose version
+node -v
+npm -v
 ```
 
-## Architecture
+---
 
-```mermaid
-flowchart TB
-    Client[Client HTTP] --> Gateway[Gateway :8090]
-    Gateway --> Eureka[Eureka Server :8761]
-    ConfigServer[Config Server :8888] --> Eureka
-    GitRepo[config-repo Git] --> ConfigServer
+## Démarrage rapide (Docker)
 
-    Gateway --> Assignment[Assignment :8081]
-    Gateway --> DriverClient[DriverClient :8082]
-    Gateway --> Vehicle[Vehicle :8083]
-    Gateway --> Delivery[Delivery :8084]
-    Gateway --> Package[Package :8085]
-
-    Delivery -->|"OpenFeign"| Package
-    Delivery --> DeliveryDB[(delivery_db MySQL)]
-```
-
-Documentation complète : voir le dossier [`docs/`](docs/) ou lancer `mkdocs serve`.
-
-## Ports et URLs
-
-### Infrastructure
-
-| Service | Port | URL |
-|---------|------|-----|
-| Eureka Server | 8761 | http://localhost:8761 |
-| Config Server | 8888 | http://localhost:8888 |
-| API Gateway | 8090 | http://localhost:8090 |
-| Keycloak | 8080 | http://localhost:8080 (realm `deliverx`, console admin : `admin`/`admin`) |
-
-### Microservices
-
-| Service | Port | URL directe | Préfixe Gateway |
-|---------|------|-------------|-----------------|
-| assignment-service | 8081 | http://localhost:8081 | `/assignment/**` |
-| driver-client-service | 8082 | http://localhost:8082 | `/drivers/**` |
-| vehicle-service | 8083 | http://localhost:8083 | `/vehicles/**` |
-| **delivery-service** | **8084** | http://localhost:8084 | `/deliveries/**` |
-| package-service | 8085 | http://localhost:8085 | `/packages/**` |
-| **tracking-service** | **8086** | http://localhost:8086 | `/tracking/**` |
-
-### Swagger (delivery-service)
-
-| Ressource | URL |
-|-----------|-----|
-| Swagger UI | http://localhost:8084/swagger-ui.html |
-| OpenAPI JSON | http://localhost:8084/api-docs |
-
-### Bases de données et infrastructure (Docker)
-
-| Conteneur | Port hôte | Bases / rôle | Microservices |
-|-----------|-----------|-------|---------------|
-| mysql | 3306 | delivery_db, driver_client_db, package_db | delivery, driver-client, package |
-| h2 | 9092 (TCP), 8082 (console) | assignment_db, vehicle_db | assignment, vehicle |
-| mongodb | 27017 | tracking_db | tracking |
-| keycloak | 8080 | Realm `deliverx` (authentification OAuth2/JWT) | gateway, driver-client |
-
-| Base | Utilisateur | Mot de passe |
-|------|-------------|--------------|
-| delivery_db | delivery_user | delivery_pass |
-| driver_client_db | driver_client_user | driver_client_pass |
-| package_db | package_user | package_pass |
-| tracking_db | tracking_user | tracking_pass |
-
-### Frontend (optionnel)
-
-| Portail | Port | URL |
-|---------|------|-----|
-| Client Portal | 4200 | http://localhost:4200 |
-| Admin Portal | 4201 | http://localhost:4201 |
-
-## Démarrage
-
-### 1. Démarrer les bases de données
+Depuis la racine du dépôt :
 
 ```powershell
-docker compose up -d
+docker compose up -d --build
 ```
 
-Vérifier l'état :
+Premier build : plusieurs minutes. Vérifier :
 
 ```powershell
 docker compose ps
 ```
 
-### 2. Construire les services
+### URLs principales
+
+| Service | URL |
+|---------|-----|
+| Eureka | http://localhost:8761 |
+| Config Server | http://localhost:8888 |
+| Keycloak | http://localhost:8080 (admin / admin) |
+| API Gateway | http://localhost:8090 |
+| Client portal | http://localhost:4200 |
+| Admin portal | http://localhost:4201 |
+| Documentation MkDocs | http://localhost:8000 |
+| **Swagger Gateway (tous les APIs)** | **http://localhost:8090/swagger** |
+| Swagger Gateway (ancien lien) | http://localhost:8090/swagger-ui.html (redirect) |
+| Delivery Swagger (direct) | http://localhost:8084/swagger-ui.html |
+| Tracking Swagger (direct) | http://localhost:8086/swagger-ui.html |
+
+> Après un changement du Gateway : `docker compose up -d --build gateway` (sinon l’ancien JAR sans Swagger reste en place).
+
+### Comptes démo Keycloak
+
+| Utilisateur | Mot de passe | Rôle | Portail |
+|-------------|--------------|------|---------|
+| `admin1` | `admin123` | admin | http://localhost:4201 |
+| `client1` | `client123` | user | http://localhost:4200 |
+
+### Smoke tests Gateway
 
 ```powershell
-cd delivery-service
-.\mvnw.cmd clean package -DskipTests
+curl http://localhost:8090/assignment/health
+curl http://localhost:8090/drivers/health
+curl http://localhost:8090/vehicles/health
+curl http://localhost:8090/deliveries/health
+curl http://localhost:8090/packages/health
+curl http://localhost:8090/tracking/health
 ```
 
-Répéter pour les autres services si nécessaire.
-
-### 3. Démarrer l'infrastructure Spring Cloud
-
-Dans l'ordre, chaque service dans un terminal séparé :
-
-```powershell
-cd eureka-server
-.\mvnw.cmd spring-boot:run
-```
-
-```powershell
-cd config-server
-.\mvnw.cmd spring-boot:run
-```
-
-### 4. Démarrer les microservices
-
-```powershell
-cd package-service
-.\mvnw.cmd spring-boot:run
-```
-
-```powershell
-cd delivery-service
-.\mvnw.cmd spring-boot:run
-```
-
-> Démarrer `package-service` avant `delivery-service` pour la communication OpenFeign.
-
-Puis les autres services et le Gateway :
-
-```powershell
-cd GateWay
-.\mvnw.cmd spring-boot:run
-```
-
-### 5. Migration automatique (delivery-service)
-
-Les tables MySQL sont créées automatiquement par Hibernate :
-
-```properties
-spring.jpa.hibernate.ddl-auto=update
-```
-
-Aucune migration manuelle n'est requise. Au premier démarrage, les entités `Delivery` et `DeliveryProof` génèrent les tables `deliveries` et `delivery_proofs`.
-
-### Arrêt des conteneurs
+### Arrêt / nettoyage
 
 ```powershell
 docker compose down
-```
-
-### Suppression des conteneurs et volumes
-
-```powershell
 docker compose down -v
+docker compose up -d --build --force-recreate
 ```
 
-### Reconstruction complète
+---
+
+## Ports
+
+### Infrastructure
+
+| Service | Port |
+|---------|------|
+| Eureka | 8761 |
+| Config Server | 8888 |
+| Keycloak | 8080 |
+| Gateway | 8090 |
+
+### Microservices
+
+| Service | Port | Note Docker |
+|---------|------|-------------|
+| assignment-service | 8081 | |
+| driver-client-service | 8082 | hôte **8087** → 8082 |
+| vehicle-service | 8083 | |
+| delivery-service | 8084 | |
+| package-service | 8085 | |
+| tracking-service | 8086 | |
+
+### Bases de données
+
+| Conteneur | Port | Bases |
+|-----------|------|-------|
+| mysql | 3306 | delivery_db, driver_client_db, package_db |
+| h2 | 9092 (TCP), 8082 (console) | serveur H2 |
+| mongodb | 27017 | tracking_db |
+
+### Frontends
+
+| Portail | Port |
+|---------|------|
+| client-portal | 4200 |
+| admin-portal | 4201 |
+
+---
+
+## Mode développement local (optionnel)
+
+1. Démarrer les dépendances : `docker compose up -d mysql h2 mongodb keycloak`
+2. Eureka puis Config Server (`.\mvnw.cmd spring-boot:run`)
+3. Microservices (package avant delivery), puis Gateway
+4. Frontend :
 
 ```powershell
-docker compose down -v
-docker compose up -d --force-recreate
+cd frontend
+npm install
+npm run start:client
+npm run start:admin
 ```
 
-## API Delivery Service
+Détails : [docs/getting-started.md](docs/getting-started.md)
 
-Base URL : `http://localhost:8084/api/deliveries`
+---
 
-Via Gateway : `http://localhost:8090/deliveries/api/deliveries`
+## Architecture (résumé)
 
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/api/deliveries` | Liste paginée (filtres : status, driverId, date) |
-| GET | `/api/deliveries/{id}` | Détail |
-| POST | `/api/deliveries` | Créer |
-| PUT | `/api/deliveries/{id}` | Modifier (PENDING uniquement) |
-| PATCH | `/api/deliveries/{id}/status` | Changer le statut |
-| DELETE | `/api/deliveries/{id}` | Supprimer ou annuler |
-| GET | `/api/deliveries/{id}/proof` | Preuve de livraison |
-| POST | `/api/deliveries/{id}/proof` | Créer une preuve |
-| GET | `/api/deliveries/driver/{driverId}` | Par conducteur |
-| GET | `/api/deliveries/schedule?date=YYYY-MM-DD` | Par date |
-
-### Exemples
-
-```powershell
-curl "http://localhost:8084/api/deliveries?page=0&size=10&status=PENDING"
+```mermaid
+flowchart LR
+  UI[Angular] --> GW[Gateway :8090]
+  GW --> Services[Microservices]
+  Services --> DB[(MySQL / H2 / Mongo)]
+  UI --> KC[Keycloak :8080]
+  GW --> KC
 ```
 
-```powershell
-curl -X POST http://localhost:8084/api/deliveries -H "Content-Type: application/json" -d "{\"packageId\":1,\"clientId\":1,\"driverId\":1,\"vehicleId\":1,\"pickupAddress\":\"Paris\",\"deliveryAddress\":\"Lyon\",\"scheduledDate\":\"2026-06-30T14:00:00\"}"
-```
+- **OpenFeign** : assignment → delivery / driver / vehicle ; delivery → package
+- **WebSocket STOMP** : tracking temps réel
+- **RabbitMQ** : non utilisé dans ce projet
 
-```powershell
-curl -X PATCH http://localhost:8084/api/deliveries/1/status -H "Content-Type: application/json" -d "{\"status\":\"ASSIGNED\"}"
-```
-
-```powershell
-curl http://localhost:8090/deliveries/health
-curl http://localhost:8090/deliveries/package/1
-```
-
-## Sécurité (Keycloak)
-
-L'authentification repose sur **Keycloak** (realm `deliverx`, importé automatiquement au démarrage du conteneur depuis `docker/keycloak/deliverx-realm.json`).
-
-- **Gateway** : resource server OAuth2 — les GET sont publics, toute mutation (POST/PUT/PATCH/DELETE) exige un JWT Keycloak valide.
-- **driver-client-service** : valide aussi le JWT lui-même (défense en profondeur) et applique les règles fines par rôle : écritures réservées au rôle `admin`, endpoint self-service `/clients/me` pour tout utilisateur authentifié.
-- Les rôles sont portés par le client Keycloak `driver-client-service` (`resource_access.driver-client-service.roles`).
-
-| Utilisateur de test | Mot de passe | Rôle |
-|---------------------|--------------|------|
-| `admin1` | `admin123` | admin (écriture) |
-| `client1` | `client123` | user (lecture / self-service) |
-
-Test automatisé de la chaîne complète (401 / 403 / 201 via le Gateway) :
-
-```bash
-bash scripts/validate-driver-client-auth.sh
-```
-
-## Communication inter-services (OpenFeign)
-
-`delivery-service` appelle `package-service` via OpenFeign :
-
-```powershell
-curl http://localhost:8084/package/1
-curl http://localhost:8090/deliveries/package/1
-```
-
-## Tests via Gateway
-
-| Requête | Réponse attendue |
-|---------|------------------|
-| `GET http://localhost:8090/assignment/health` | `{ "status": "UP", "service": "ASSIGNMENT-SERVICE" }` |
-| `GET http://localhost:8090/drivers/hello` | `{ "message": "Hello from Driver & Client Service" }` |
-| `GET http://localhost:8090/vehicles/health` | `{ "status": "UP", "service": "VEHICLE-SERVICE" }` |
-| `GET http://localhost:8090/deliveries/hello` | `{ "message": "Hello from Delivery Service" }` |
-| `GET http://localhost:8090/packages/health` | `{ "status": "UP", "service": "PACKAGE-SERVICE" }` |
+---
 
 ## Documentation MkDocs
 
+Avec Docker (`docker compose up`), la doc est servie automatiquement :
+
+**http://localhost:8000**
+
+En local (sans le conteneur) :
+
 ```powershell
-pip install mkdocs mkdocs-material
+pip install mkdocs mkdocs-material pymdown-extensions
 mkdocs serve
 ```
 
-Ouvrir http://127.0.0.1:8000
+Ouvrir http://127.0.0.1:8000 — architecture, Docker, bases, chaque microservice, frontend, Keycloak, communication.
+
+---
 
 ## Structure du dépôt
 
 ```
 DeliverX/
-├── docker-compose.yml        # MySQL + H2 + MongoDB (3 conteneurs)
-├── mkdocs.yml                # Configuration documentation
-├── docs/                     # Documentation MkDocs
-├── config-repo/              # Configuration centralisée
+├── docker-compose.yml
+├── docker/                 # init MySQL, realm Keycloak
+├── config-repo/            # config centralisée
 ├── config-server/
 ├── eureka-server/
 ├── GateWay/
 ├── assignment-service/
 ├── driver-client-service/
 ├── vehicle-service/
-├── delivery-service/         # CRUD livraisons + MySQL
+├── delivery-service/
 ├── package-service/
-└── frontend/                 # Angular 19
+├── tracking-service/
+├── frontend/               # Angular client + admin
+├── docs/                   # MkDocs (sources)
+├── Dockerfile.docs         # Image nginx de la documentation
+├── mkdocs.yml
+└── README.md
 ```
+
+---
 
 ## Stack technique
 
-| Composant | Version |
-|-----------|---------|
+| Composant | Version / techno |
+|-----------|------------------|
 | Spring Boot | 3.2.5 |
-| Spring Cloud | 2023.0.1 |
+| Spring Cloud | 2023.0.x |
 | Java | 17 |
-| MySQL | 8.0 (delivery-service) |
-| MongoDB | 7 (tracking-service, futur) |
-| H2 | vehicle-service, assignment-service |
-| Netflix Eureka | Service Discovery |
-| Spring Cloud Config | Configuration centralisée |
-| Spring Cloud Gateway | API Gateway |
-| OpenFeign | Communication inter-services |
-| SpringDoc OpenAPI | Swagger UI (delivery-service) |
+| Keycloak | 25 |
+| MySQL | 8.0 |
+| MongoDB | 7 |
+| H2 | embarqué / serveur Docker |
+| Angular | 19 |
+| OpenFeign | communication sync |
+| WebSocket STOMP | tracking temps réel |
+| SpringDoc | Swagger unifié au Gateway + UI par service |

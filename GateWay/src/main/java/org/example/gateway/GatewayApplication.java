@@ -3,7 +3,6 @@ package org.example.gateway;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -33,15 +32,31 @@ public class GatewayApplication {
                         .uri("lb://DELIVERY-SERVICE"))
                 .route("package", r -> r.path("/packages/**")
                         .uri("lb://PACKAGE-SERVICE"))
-                // Tracking Service — REST API
                 .route("tracking", r -> r.path("/tracking/**")
                         .filters(f -> f.stripPrefix(1))
                         .uri("lb://TRACKING-SERVICE"))
-                // Tracking Service — WebSocket (STOMP /ws endpoint)
                 .route("tracking-ws", r -> r.path("/ws/**")
+                        .uri("lb://TRACKING-SERVICE"))
+
+                // OpenAPI specs aggregated by Gateway Swagger UI (outside /v3/api-docs to avoid springdoc conflict)
+                .route("openapi-assignment", r -> r.path("/aggregated-docs/assignment")
+                        .filters(f -> f.setPath("/api-docs"))
+                        .uri("lb://ASSIGNMENT-SERVICE"))
+                .route("openapi-driver-client", r -> r.path("/aggregated-docs/driver-client")
+                        .filters(f -> f.setPath("/api-docs"))
+                        .uri("lb://DRIVER-CLIENT-SERVICE"))
+                .route("openapi-vehicle", r -> r.path("/aggregated-docs/vehicle")
+                        .filters(f -> f.setPath("/api-docs"))
+                        .uri("lb://VEHICLE-SERVICE"))
+                .route("openapi-delivery", r -> r.path("/aggregated-docs/delivery")
+                        .filters(f -> f.setPath("/api-docs"))
+                        .uri("lb://DELIVERY-SERVICE"))
+                .route("openapi-package", r -> r.path("/aggregated-docs/package")
+                        .filters(f -> f.setPath("/api-docs"))
+                        .uri("lb://PACKAGE-SERVICE"))
+                .route("openapi-tracking", r -> r.path("/aggregated-docs/tracking")
+                        .filters(f -> f.setPath("/api-docs"))
                         .uri("lb://TRACKING-SERVICE"))
                 .build();
     }
-
-
 }

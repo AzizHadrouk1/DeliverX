@@ -1,41 +1,46 @@
-# API Delivery Service
+# API Delivery Service — exemples
 
-Base URL directe : `http://localhost:8084/api/deliveries`
-
+Base URL directe : `http://localhost:8084/api/deliveries`  
 Via Gateway : `http://localhost:8090/deliveries/api/deliveries`
+
+Swagger : http://localhost:8084/swagger-ui.html  
+Swagger unifié (Gateway) : http://localhost:8090/swagger — choisir **delivery-service** dans le menu.
 
 ## Endpoints
 
 | Méthode | Chemin | Description |
 |---------|--------|-------------|
-| GET | `/api/deliveries` | Liste paginée avec filtres |
-| GET | `/api/deliveries/{id}` | Détail d'une livraison |
-| POST | `/api/deliveries` | Créer une livraison |
-| PUT | `/api/deliveries/{id}` | Modifier (statut PENDING uniquement) |
+| GET | `/api/deliveries` | Liste paginée + filtres |
+| GET | `/api/deliveries/{id}` | Détail |
+| POST | `/api/deliveries` | Créer |
+| PUT | `/api/deliveries/{id}` | Modifier (PENDING uniquement) |
 | PATCH | `/api/deliveries/{id}/status` | Changer le statut |
 | DELETE | `/api/deliveries/{id}` | Supprimer ou annuler |
-| GET | `/api/deliveries/{id}/proof` | Preuve de livraison |
+| GET | `/api/deliveries/{id}/proof` | Lire la preuve |
 | POST | `/api/deliveries/{id}/proof` | Créer une preuve |
-| GET | `/api/deliveries/driver/{driverId}` | Livraisons par conducteur |
-| GET | `/api/deliveries/schedule?date=YYYY-MM-DD` | Livraisons planifiées |
+| GET | `/api/deliveries/driver/{driverId}` | Par conducteur |
+| GET | `/api/deliveries/schedule?date=YYYY-MM-DD` | Par date |
 
-## Statuts
+## Transitions de statut
 
 `PENDING` → `ASSIGNED` → `PICKED_UP` → `IN_PROGRESS` → `DELIVERED` | `FAILED` | `CANCELLED`
 
-## Exemples
+Depuis `PENDING` / états intermédiaires, `CANCELLED` est autorisé selon le validateur. Les états terminaux n'acceptent plus de transition.
 
-### Lister les livraisons (paginé, filtre statut)
+## Exemples curl
 
-```bash
+### Lister (paginé, filtre)
+
+```powershell
 curl "http://localhost:8084/api/deliveries?page=0&size=10&status=PENDING"
+curl "http://localhost:8090/deliveries/api/deliveries?page=0&size=5"
 ```
 
-### Créer une livraison
+### Créer
 
-```bash
-curl -X POST http://localhost:8084/api/deliveries \
-  -H "Content-Type: application/json" \
+```powershell
+curl -X POST http://localhost:8084/api/deliveries `
+  -H "Content-Type: application/json" `
   -d '{
     "packageId": 1,
     "clientId": 1,
@@ -43,23 +48,26 @@ curl -X POST http://localhost:8084/api/deliveries \
     "vehicleId": 1,
     "pickupAddress": "12 Rue de la Paix, Paris",
     "deliveryAddress": "45 Avenue Victor Hugo, Lyon",
-    "scheduledDate": "2026-06-30T14:00:00"
+    "scheduledDate": "2026-07-15T14:00:00"
   }'
 ```
 
+!!! note
+    Via Gateway, les POST nécessitent un Bearer JWT Keycloak.
+
 ### Modifier le statut
 
-```bash
-curl -X PATCH http://localhost:8084/api/deliveries/1/status \
-  -H "Content-Type: application/json" \
+```powershell
+curl -X PATCH http://localhost:8084/api/deliveries/1/status `
+  -H "Content-Type: application/json" `
   -d '{"status": "ASSIGNED", "note": "Driver assigned"}'
 ```
 
-### Créer une preuve de livraison
+### Preuve de livraison
 
-```bash
-curl -X POST http://localhost:8084/api/deliveries/1/proof \
-  -H "Content-Type: application/json" \
+```powershell
+curl -X POST http://localhost:8084/api/deliveries/1/proof `
+  -H "Content-Type: application/json" `
   -d '{
     "photoUrl": "https://example.com/photo.jpg",
     "signature": "base64-signature",
@@ -67,29 +75,23 @@ curl -X POST http://localhost:8084/api/deliveries/1/proof \
   }'
 ```
 
-### Livraisons planifiées pour une date
+### Planning
 
-```bash
-curl "http://localhost:8084/api/deliveries/schedule?date=2026-06-30"
+```powershell
+curl "http://localhost:8084/api/deliveries/schedule?date=2026-07-15"
 ```
 
-### Via Gateway
+### OpenFeign package
 
-```bash
-curl "http://localhost:8090/deliveries/api/deliveries?page=0&size=5"
-curl "http://localhost:8090/deliveries/health"
-curl "http://localhost:8090/deliveries/package/1"
+```powershell
+curl http://localhost:8084/package/1
+curl http://localhost:8090/deliveries/package/1
 ```
 
 ## Codes d'erreur
 
-| Code | Exception |
-|------|-----------|
-| 400 | Validation, BadRequestException |
-| 404 | DeliveryNotFoundException |
-| 409 | InvalidStatusTransitionException, DeliveryAlreadyCompletedException |
-
-## Swagger
-
-- API docs : `http://localhost:8084/api-docs`
-- Swagger UI : `http://localhost:8084/swagger-ui.html`
+| HTTP | Cas |
+|------|-----|
+| 400 | Validation / BadRequest |
+| 404 | Delivery introuvable |
+| 409 | Transition invalide / déjà terminée |

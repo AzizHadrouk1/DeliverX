@@ -44,6 +44,16 @@ public class SecurityConfig {
                         .requestMatchers("/health", "/drivers/health", "/clients/health", "/hello", "/actuator/**")
                         .permitAll()
 
+                        // Swagger / OpenAPI (aggregated via Gateway)
+                        .requestMatchers(
+                                "/api-docs",
+                                "/api-docs/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**"
+                        ).permitAll()
+
                         // self-service: any authenticated client, not just admins, and not
                         // covered by the public-GET/admin-write rules below
                         .requestMatchers(HttpMethod.GET, "/clients/me").authenticated()
