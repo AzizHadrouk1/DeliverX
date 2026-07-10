@@ -1,6 +1,9 @@
 {
   "realm": "deliverx",
   "enabled": true,
+  "displayName": "DeliverX",
+  "displayNameHtml": "Deliver<span>X</span>",
+  "loginTheme": "deliverx",
   "sslRequired": "none",
   "registrationAllowed": false,
   "accessTokenLifespan": 900,
