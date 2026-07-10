@@ -2,7 +2,6 @@ import { Routes } from '@angular/router';
 import { AdminShellComponent } from './layout/admin-shell.component';
 import { roleGuard } from './core/guards/admin-auth.guard';
 import { adminGuestGuard } from './core/guards/admin-guest.guard';
-import { ComingSoonComponent } from './pages/coming-soon/coming-soon.component';
 
 export const routes: Routes = [
   {
@@ -24,14 +23,9 @@ export const routes: Routes = [
       { path: 'packages/:id', loadComponent: () => import('./pages/packages/package-detail.component').then(m => m.PackageDetailComponent) },
       { path: 'deliveries', loadComponent: () => import('./pages/deliveries/deliveries.component').then(m => m.DeliveriesComponent) },
       { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking-map.component').then(m => m.TrackingMapComponent) },
-      {
-        path: 'assignments',
-        component: ComingSoonComponent,
-        data: {
-          title: 'Assignment management',
-          description: 'Driver assignment and workload balancing will be managed here.'
-        }
-      },
+      { path: 'assignments', loadComponent: () => import('./pages/assignments/assignment-list.component').then(m => m.AssignmentListComponent) },
+      { path: 'assignments/new', loadComponent: () => import('./pages/assignments/assignment-form.component').then(m => m.AssignmentFormComponent) },
+      { path: 'assignments/:id/edit', loadComponent: () => import('./pages/assignments/assignment-form.component').then(m => m.AssignmentFormComponent) },
       { path: 'drivers', loadComponent: () => import('./pages/drivers/driver-list.component').then(m => m.DriverListComponent) },
       { path: 'drivers/new', loadComponent: () => import('./pages/drivers/driver-form.component').then(m => m.DriverFormComponent) },
       { path: 'drivers/:id/edit', loadComponent: () => import('./pages/drivers/driver-form.component').then(m => m.DriverFormComponent) },

@@ -1,4 +1,5 @@
 export * from './lib/config/api.config';
+export * from './lib/models/assignment.model';
 export * from './lib/models/auth.model';
 export * from './lib/models/client.model';
 export * from './lib/models/delivery.model';
@@ -7,6 +8,7 @@ export * from './lib/models/health.model';
 export * from './lib/models/package.model';
 export * from './lib/models/tracking.model';
 export * from './lib/models/vehicle.model';
+export * from './lib/services/assignment-api.service';
 export * from './lib/services/auth.service';
 export * from './lib/services/client-api.service';
 export * from './lib/services/delivery-api.service';
