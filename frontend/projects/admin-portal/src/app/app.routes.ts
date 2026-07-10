@@ -20,6 +20,8 @@ export const routes: Routes = [
       { path: 'vehicles/new', loadComponent: () => import('./pages/vehicles/vehicle-form.component').then(m => m.VehicleFormComponent) },
       { path: 'vehicles/:id/edit', loadComponent: () => import('./pages/vehicles/vehicle-form.component').then(m => m.VehicleFormComponent) },
       { path: 'packages', loadComponent: () => import('./pages/packages/package-list.component').then(m => m.PackageListComponent) },
+      { path: 'packages/new', loadComponent: () => import('./pages/packages/package-form.component').then(m => m.PackageFormComponent) },
+      { path: 'packages/:id/edit', loadComponent: () => import('./pages/packages/package-form.component').then(m => m.PackageFormComponent) },
       { path: 'packages/:id', loadComponent: () => import('./pages/packages/package-detail.component').then(m => m.PackageDetailComponent) },
       { path: 'deliveries', loadComponent: () => import('./pages/deliveries/deliveries.component').then(m => m.DeliveriesComponent) },
       { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking-map.component').then(m => m.TrackingMapComponent) },

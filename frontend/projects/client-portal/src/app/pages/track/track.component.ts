@@ -97,7 +97,7 @@ export class TrackComponent implements OnInit, AfterViewInit, OnDestroy {
       const id = params.get('id');
       if (id) {
         this.packageId = id;
-        this.executeSearch(Number(id));
+        this.executeSearch(id);
       } else {
         this.packageId = '';
         this.pkg.set(null);
@@ -121,28 +121,33 @@ export class TrackComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── Search ─────────────────────────────────────────────────────────────────
 
   search(): void {
-    const id = Number(this.packageId);
-    if (!id || isNaN(id)) {
-      this.error.set('Enter a valid numeric package ID.');
+    const query = this.packageId.trim();
+    if (!query) {
+      this.error.set('Enter a package ID or tracking number.');
       return;
     }
-    this.router.navigate(['/track', id]);
+    this.router.navigate(['/track', query]);
   }
 
-  private executeSearch(id: number): void {
+  private executeSearch(query: string): void {
     this.loading.set(true);
     this.error.set(null);
     this.teardown();
     this.destroyMap();
 
-    this.packageApi.getById(id).subscribe({
+    const numericId = Number(query);
+    const lookup$ = !isNaN(numericId) && /^\d+$/.test(query)
+      ? this.packageApi.getById(numericId)
+      : this.packageApi.getByTracking(query);
+
+    lookup$.subscribe({
       next: (pkg) => {
         this.pkg.set(pkg);
+        const id = pkg.id!;
         this.deliveryApi.getDeliveryForPackage(id).subscribe({
           next: (d) => {
             this.delivery.set(d);
             this.loading.set(false);
-            // Try to load real-time tracking for this delivery
             this.loadTracking(String(id));
           },
           error: () => {
@@ -153,7 +158,7 @@ export class TrackComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       },
       error: () => {
-        this.error.set(`Package ${id} was not found.`);
+        this.error.set(`Package "${query}" was not found.`);
         this.pkg.set(null);
         this.delivery.set(null);
         this.loading.set(false);

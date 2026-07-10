@@ -220,6 +220,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/package_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: package_user
+      SPRING_DATASOURCE_PASSWORD: package_pass
     ports:
       - "8085:8085"
     networks:
@@ -228,6 +231,8 @@ services:
       eureka-server:
         condition: service_healthy
       config-server:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
 
   delivery-service:

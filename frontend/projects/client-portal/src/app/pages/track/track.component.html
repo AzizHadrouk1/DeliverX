@@ -8,7 +8,7 @@
   <header class="track-header">
     <div class="track-header__inner">
       <h1>Track your delivery</h1>
-      <p class="track-header__sub">Enter your package ID to follow it in real time.</p>
+      <p class="track-header__sub">Enter your package ID or tracking number to follow it in real time.</p>
 
       <form class="search-bar" (ngSubmit)="search()">
         <div class="search-bar__icon">📦</div>
@@ -17,7 +17,7 @@
           type="text"
           name="packageId"
           [(ngModel)]="packageId"
-          placeholder="Package ID  (e.g. 1)"
+          placeholder="Package ID or tracking number (e.g. DX-ABC123)"
           autocomplete="off"
           required
         />
@@ -64,8 +64,11 @@
 
           <dl class="meta-grid">
             <div><dt>Package ID</dt><dd>#{{ package.id }}</dd></div>
-            <div><dt>Destination</dt><dd>{{ package.destination }}</dd></div>
+            <div><dt>Client</dt><dd>#{{ package.clientId }}</dd></div>
             <div><dt>Weight</dt><dd>{{ package.weight }} kg</dd></div>
+            @if (package.description) {
+              <div><dt>Description</dt><dd>{{ package.description }}</dd></div>
+            }
           </dl>
         </section>
 

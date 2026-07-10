@@ -1,6 +1,33 @@
 <section>
-  <h1>Package management</h1>
-  <p>Track package status, destination, and weight across the network.</p>
+  <div class="header">
+    <div>
+      <h1>Package management</h1>
+      <p>Manage package lifecycle, dimensions, and status history.</p>
+    </div>
+    <a routerLink="/packages/new" class="btn btn--primary">Add package</a>
+  </div>
+
+  <div class="toolbar">
+    <label>
+      Filter by status
+      <select [(ngModel)]="selectedStatus" (change)="load()" name="status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Client ID
+      <input
+        type="number"
+        [(ngModel)]="clientIdFilter"
+        (change)="load()"
+        name="clientId"
+        placeholder="Any"
+      />
+    </label>
+  </div>
 
   @if (loading()) {
     <lib-loading-state />
@@ -16,13 +43,32 @@
         <article>
           <div class="card__header">
             <h2>{{ pkg.trackingNumber }}</h2>
-            <lib-status-badge [label]="pkg.status" [tone]="pkg.status | statusTone" />
+            <lib-status-badge [label]="pkg.status!" [tone]="pkg.status! | statusTone" />
           </div>
-          <p>Destination: {{ pkg.destination }}</p>
+          <p>Client: #{{ pkg.clientId }}</p>
           <p>Weight: {{ pkg.weight }} kg</p>
-          <a [routerLink]="['/packages', pkg.id]">View details</a>
+          @if (pkg.description) {
+            <p>{{ pkg.description }}</p>
+          }
+          <div class="card__actions">
+            <a [routerLink]="['/packages', pkg.id]">View</a>
+            <a [routerLink]="['/packages', pkg.id, 'edit']">Edit</a>
+            @if (pkg.status === 'CREATED') {
+              <button type="button" (click)="deletePackage(pkg.id!)">Delete</button>
+            }
+          </div>
         </article>
+      } @empty {
+        <p>No packages found.</p>
       }
     </div>
+
+    @if (totalPages() > 1) {
+      <div class="pager">
+        <button type="button" [disabled]="page() === 0" (click)="load(page() - 1)">Previous</button>
+        <span>Page {{ page() + 1 }} / {{ totalPages() }}</span>
+        <button type="button" [disabled]="page() + 1 >= totalPages()" (click)="load(page() + 1)">Next</button>
+      </div>
+    }
   }
 </section>

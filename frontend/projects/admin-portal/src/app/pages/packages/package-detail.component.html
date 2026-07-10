@@ -13,13 +13,67 @@
     <div class="detail">
       <div class="detail__header">
         <h1>{{ package.trackingNumber }}</h1>
-        <lib-status-badge [label]="package.status" [tone]="package.status | statusTone" />
+        <lib-status-badge [label]="package.status!" [tone]="package.status! | statusTone" />
       </div>
+
       <dl>
         <div><dt>ID</dt><dd>{{ package.id }}</dd></div>
-        <div><dt>Destination</dt><dd>{{ package.destination }}</dd></div>
+        <div><dt>Client</dt><dd>#{{ package.clientId }}</dd></div>
         <div><dt>Weight</dt><dd>{{ package.weight }} kg</dd></div>
+        <div><dt>Width</dt><dd>{{ package.width ?? '—' }}</dd></div>
+        <div><dt>Height</dt><dd>{{ package.height ?? '—' }}</dd></div>
+        <div><dt>Depth</dt><dd>{{ package.depth ?? '—' }}</dd></div>
+        <div><dt>Created</dt><dd>{{ package.createdAt | date: 'medium' }}</dd></div>
+        <div><dt>Description</dt><dd>{{ package.description || '—' }}</dd></div>
       </dl>
+
+      <div class="actions">
+        <a class="btn" [routerLink]="['/packages', package.id, 'edit']">Edit</a>
+        @if (package.status === 'CREATED') {
+          <button type="button" class="btn btn--danger" (click)="deletePackage()">Delete</button>
+        }
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Update status</h2>
+      <form class="status-form" (ngSubmit)="updateStatus()">
+        <label>
+          New status
+          <select [(ngModel)]="nextStatus" name="nextStatus" required>
+            @for (status of statuses; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          Comment
+          <input [(ngModel)]="statusComment" name="statusComment" placeholder="Optional note" />
+        </label>
+        <button type="submit" class="btn" [disabled]="updatingStatus()">
+          {{ updatingStatus() ? 'Updating...' : 'Apply status' }}
+        </button>
+      </form>
+      @if (statusError()) {
+        <p class="error">{{ statusError() }}</p>
+      }
+    </div>
+
+    <div class="panel">
+      <h2>Status history</h2>
+      <ul class="history">
+        @for (entry of history(); track entry.id) {
+          <li>
+            <lib-status-badge [label]="entry.status" [tone]="entry.status | statusTone" />
+            <div>
+              <strong>{{ entry.timestamp | date: 'medium' }}</strong>
+              <p>{{ entry.comment || 'No comment' }}</p>
+            </div>
+          </li>
+        } @empty {
+          <li>No history yet.</li>
+        }
+      </ul>
     </div>
   }
 </section>

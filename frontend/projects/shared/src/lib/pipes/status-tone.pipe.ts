@@ -11,7 +11,7 @@ export class StatusTonePipe implements PipeTransform {
     if (['UP', 'AVAILABLE', 'DELIVERED', 'READY', 'COMPLETED'].includes(normalized)) {
       return 'success';
     }
-    if (['IN_TRANSIT', 'IN_USE', 'ASSIGNED', 'IN_PROGRESS', 'ON_DELIVERY'].includes(normalized)) {
+    if (['IN_TRANSIT', 'IN_USE', 'ASSIGNED', 'IN_PROGRESS', 'ON_DELIVERY', 'OUT_FOR_DELIVERY'].includes(normalized)) {
       return 'info';
     }
     if (['MAINTENANCE', 'IN_WAREHOUSE', 'CREATED', 'PENDING', 'PICKED_UP', 'OFF_DUTY'].includes(normalized)) {
