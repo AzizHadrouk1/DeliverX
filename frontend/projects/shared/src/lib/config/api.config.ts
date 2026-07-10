@@ -5,5 +5,7 @@ export const API_ROUTES = {
   packages: '/packages',
   deliveries: '/deliveries',
   assignment: '/assignment',
-  drivers: '/drivers'
+  drivers: '/drivers',
+  clients: '/clients',
+  tracking: '/tracking'
 } as const;

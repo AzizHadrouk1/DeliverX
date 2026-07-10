@@ -56,6 +56,7 @@ Documentation complète : voir le dossier [`docs/`](docs/) ou lancer `mkdocs ser
 | vehicle-service | 8083 | http://localhost:8083 | `/vehicles/**` |
 | **delivery-service** | **8084** | http://localhost:8084 | `/deliveries/**` |
 | package-service | 8085 | http://localhost:8085 | `/packages/**` |
+| **tracking-service** | **8086** | http://localhost:8086 | `/tracking/**` |
 
 ### Swagger (delivery-service)
 
