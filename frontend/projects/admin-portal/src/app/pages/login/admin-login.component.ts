@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from 'shared';
+import { KeycloakSessionService } from '../../core/services/keycloak-session.service';
 
 @Component({
   selector: 'app-admin-login',
@@ -11,20 +11,31 @@ import { AuthService } from 'shared';
   styleUrl: './admin-login.component.scss'
 })
 export class AdminLoginComponent {
-  private readonly auth = inject(AuthService);
+  private readonly session = inject(KeycloakSessionService);
   private readonly router = inject(Router);
 
-  protected email = 'admin@deliverx.com';
+  protected username = 'admin1';
   protected password = '';
   protected readonly error = signal<string | null>(null);
+  protected readonly loading = signal(false);
 
-  submit(): void {
-    const success = this.auth.login({ email: this.email, password: this.password }, 'ADMIN');
-    if (!success) {
-      this.error.set('Invalid admin credentials.');
-      return;
+  async submit(): Promise<void> {
+    this.error.set(null);
+    this.loading.set(true);
+
+    try {
+      await this.session.loginWithPassword(this.username, this.password);
+
+      if (!this.session.adminRoles.includes('admin')) {
+        this.error.set('This account does not have admin access.');
+        return;
+      }
+
+      this.router.navigate(['/dashboard']);
+    } catch {
+      this.error.set('Invalid username or password.');
+    } finally {
+      this.loading.set(false);
     }
-
-    this.router.navigate(['/dashboard']);
   }
 }

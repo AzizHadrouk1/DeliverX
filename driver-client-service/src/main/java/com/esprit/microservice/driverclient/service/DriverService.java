@@ -20,11 +20,11 @@ import java.util.List;
 public class DriverService {
 
     private final DriverRepository driverRepository;
-    private final ActionLogService actionLogService;
+    private final UniquenessGuard uniquenessGuard;
 
-    public DriverService(DriverRepository driverRepository, ActionLogService actionLogService) {
+    public DriverService(DriverRepository driverRepository, UniquenessGuard uniquenessGuard) {
         this.driverRepository = driverRepository;
-        this.actionLogService = actionLogService;
+        this.uniquenessGuard = uniquenessGuard;
     }
 
     @Transactional(readOnly = true)
@@ -52,32 +52,23 @@ public class DriverService {
     }
 
     public Driver create(Driver driver) {
-        if (driverRepository.existsByEmail(driver.getEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Driver with email already exists: " + driver.getEmail());
-        }
-        if (driverRepository.existsByLicenseNumber(driver.getLicenseNumber())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Driver with license number already exists: " + driver.getLicenseNumber());
-        }
-        Driver saved = driverRepository.save(driver);
-        actionLogService.log("system", "CREATE", "Driver", saved.getId(), saved.getEmail());
-        return saved;
+        uniquenessGuard.check(driverRepository.existsByEmail(driver.getEmail()),
+                "Driver with email already exists: " + driver.getEmail());
+        uniquenessGuard.check(driverRepository.existsByLicenseNumber(driver.getLicenseNumber()),
+                "Driver with license number already exists: " + driver.getLicenseNumber());
+
+        return driverRepository.save(driver);
     }
 
     public Driver update(Long id, Driver updatedDriver) {
         Driver existing = findById(id);
 
-        if (!existing.getEmail().equals(updatedDriver.getEmail())
-                && driverRepository.existsByEmail(updatedDriver.getEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Driver with email already exists: " + updatedDriver.getEmail());
+        if (!existing.getEmail().equals(updatedDriver.getEmail())) {
+            uniquenessGuard.check(driverRepository.existsByEmail(updatedDriver.getEmail()),
+                    "Driver with email already exists: " + updatedDriver.getEmail());
         }
-        if (!existing.getLicenseNumber().equals(updatedDriver.getLicenseNumber())
-                && driverRepository.existsByLicenseNumber(updatedDriver.getLicenseNumber())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
+        if (!existing.getLicenseNumber().equals(updatedDriver.getLicenseNumber())) {
+            uniquenessGuard.check(driverRepository.existsByLicenseNumber(updatedDriver.getLicenseNumber()),
                     "Driver with license number already exists: " + updatedDriver.getLicenseNumber());
         }
 
@@ -89,17 +80,13 @@ public class DriverService {
         existing.setStatus(updatedDriver.getStatus());
         existing.setVehicleId(updatedDriver.getVehicleId());
 
-        Driver saved = driverRepository.save(existing);
-        actionLogService.log("system", "UPDATE", "Driver", saved.getId(), saved.getEmail());
-        return saved;
+        return driverRepository.save(existing);
     }
 
     public Driver updateStatus(Long id, DriverStatus status) {
         Driver driver = findById(id);
         driver.setStatus(status);
-        Driver saved = driverRepository.save(driver);
-        actionLogService.log("system", "STATUS_CHANGE", "Driver", saved.getId(), status.name());
-        return saved;
+        return driverRepository.save(driver);
     }
 
     public void delete(Long id) {
@@ -107,7 +94,6 @@ public class DriverService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Driver not found: " + id);
         }
         driverRepository.deleteById(id);
-        actionLogService.log("system", "DELETE", "Driver", id, null);
     }
 
     private PageResponse<Driver> toPageResponse(Page<Driver> page) {

@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService } from 'shared';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import Keycloak from 'keycloak-js';
+import { KeycloakSessionService } from '../core/services/keycloak-session.service';
 
 @Component({
   selector: 'app-shell',
@@ -10,5 +11,12 @@ import { AuthService } from 'shared';
   styleUrl: './shell.component.scss'
 })
 export class ShellComponent {
-  protected readonly auth = inject(AuthService);
+  protected readonly keycloak = inject(Keycloak);
+  private readonly session = inject(KeycloakSessionService);
+  private readonly router = inject(Router);
+
+  async logout(): Promise<void> {
+    await this.session.logout();
+    this.router.navigate(['/login']);
+  }
 }

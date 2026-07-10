@@ -1,0 +1,72 @@
+<section>
+  <div class="header">
+    <div>
+      <h1>Drivers</h1>
+      <p>Manage drivers, licenses, and availability.</p>
+    </div>
+    <div class="header__actions">
+      <a routerLink="/clients" class="btn btn--ghost">View clients</a>
+      <a routerLink="/drivers/new" class="btn btn--primary">Add driver</a>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <label>
+      Filter by status
+      <select [(ngModel)]="selectedStatus" (change)="load()" name="status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (loading()) {
+    <lib-loading-state />
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>License #</th>
+            <th>Vehicle</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (driver of drivers(); track driver.id) {
+            <tr>
+              <td>{{ driver.firstName }} {{ driver.lastName }}</td>
+              <td>{{ driver.email }}</td>
+              <td>{{ driver.phone }}</td>
+              <td>{{ driver.licenseNumber }}</td>
+              <td>{{ driver.vehicleId ?? '—' }}</td>
+              <td>
+                <lib-status-badge [label]="driver.status ?? 'AVAILABLE'" [tone]="(driver.status ?? 'AVAILABLE') | statusTone" />
+              </td>
+              <td class="actions">
+                <a [routerLink]="['/drivers', driver.id, 'edit']">Edit</a>
+                <button type="button" (click)="deleteDriver(driver.id!)">Delete</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7">No drivers found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

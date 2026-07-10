@@ -24,6 +24,8 @@ public class GatewayApplication {
                         .uri("lb://ASSIGNMENT-SERVICE"))
                 .route("driver-client", r -> r.path("/drivers/**")
                         .uri("lb://DRIVER-CLIENT-SERVICE"))
+                .route("client", r -> r.path("/clients/**")
+                        .uri("lb://DRIVER-CLIENT-SERVICE"))
                 .route("vehicle", r -> r.path("/vehicles/**")
                         .uri("lb://VEHICLE-SERVICE"))
                 .route("delivery", r -> r.path("/deliveries/**")
