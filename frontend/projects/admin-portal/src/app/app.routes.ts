@@ -23,6 +23,7 @@ export const routes: Routes = [
       { path: 'packages/:id', loadComponent: () => import('./pages/packages/package-detail.component').then(m => m.PackageDetailComponent) },
       { path: 'deliveries', loadComponent: () => import('./pages/deliveries/deliveries.component').then(m => m.DeliveriesComponent) },
       { path: 'tracking', loadComponent: () => import('./pages/tracking/tracking-map.component').then(m => m.TrackingMapComponent) },
+      { path: 'driver-live', loadComponent: () => import('./pages/driver-live/driver-live.component').then(m => m.DriverLiveComponent) },
       { path: 'assignments', loadComponent: () => import('./pages/assignments/assignment-list.component').then(m => m.AssignmentListComponent) },
       { path: 'assignments/new', loadComponent: () => import('./pages/assignments/assignment-form.component').then(m => m.AssignmentFormComponent) },
       { path: 'assignments/:id/edit', loadComponent: () => import('./pages/assignments/assignment-form.component').then(m => m.AssignmentFormComponent) },

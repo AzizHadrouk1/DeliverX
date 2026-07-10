@@ -8,8 +8,9 @@ DeliverX repose sur Spring Cloud pour la découverte de services, la configurati
 |-----------|------|------|
 | Eureka Server | 8761 | Service discovery |
 | Config Server | 8888 | Configuration centralisée (Git) |
-| API Gateway | 8090 | Point d'entrée unique |
-| Microservices métier | 8081–8085 | Domaines fonctionnels |
+| API Gateway | 8090 | Point d'entrée unique + validation JWT centralisée |
+| Keycloak | 8080 | Authentification OAuth2 / émission des JWT (realm `deliverx`) |
+| Microservices métier | 8081–8086 | Domaines fonctionnels |
 
 ## Flux de requête
 
@@ -18,9 +19,15 @@ DeliverX repose sur Spring Cloud pour la découverte de services, la configurati
 3. Le microservice cible traite la requête
 4. La configuration est chargée depuis le Config Server (`config-repo/`)
 
+## Sécurité
+
+- **Keycloak** émet des JWT signés (realm `deliverx`, rôles portés par le client `driver-client-service`)
+- Le **Gateway** valide chaque requête : GET publics, mutations authentifiées (défense au périmètre)
+- **driver-client-service** revalide le JWT et applique les règles par rôle (défense en profondeur)
+
 ## Communication inter-services
 
-- **OpenFeign** : `delivery-service` appelle `package-service` pour récupérer les informations colis
+- **OpenFeign** : `delivery-service` appelle `package-service` ; `assignment-service` appelle driver, vehicle et delivery
 - **Eureka** : enregistrement dynamique de tous les services
 
 ## Frontend

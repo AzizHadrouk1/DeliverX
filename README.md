@@ -46,6 +46,7 @@ Documentation complète : voir le dossier [`docs/`](docs/) ou lancer `mkdocs ser
 | Eureka Server | 8761 | http://localhost:8761 |
 | Config Server | 8888 | http://localhost:8888 |
 | API Gateway | 8090 | http://localhost:8090 |
+| Keycloak | 8080 | http://localhost:8080 (realm `deliverx`, console admin : `admin`/`admin`) |
 
 ### Microservices
 
@@ -65,13 +66,14 @@ Documentation complète : voir le dossier [`docs/`](docs/) ou lancer `mkdocs ser
 | Swagger UI | http://localhost:8084/swagger-ui.html |
 | OpenAPI JSON | http://localhost:8084/api-docs |
 
-### Bases de données (Docker — 3 conteneurs)
+### Bases de données et infrastructure (Docker)
 
-| Conteneur | Port hôte | Bases | Microservices |
+| Conteneur | Port hôte | Bases / rôle | Microservices |
 |-----------|-----------|-------|---------------|
 | mysql | 3306 | delivery_db, driver_client_db, package_db | delivery, driver-client, package |
 | h2 | 9092 (TCP), 8082 (console) | assignment_db, vehicle_db | assignment, vehicle |
-| mongodb | 27017 | tracking_db | tracking (futur) |
+| mongodb | 27017 | tracking_db | tracking |
+| keycloak | 8080 | Realm `deliverx` (authentification OAuth2/JWT) | gateway, driver-client |
 
 | Base | Utilisateur | Mot de passe |
 |------|-------------|--------------|
@@ -210,6 +212,25 @@ curl -X PATCH http://localhost:8084/api/deliveries/1/status -H "Content-Type: ap
 ```powershell
 curl http://localhost:8090/deliveries/health
 curl http://localhost:8090/deliveries/package/1
+```
+
+## Sécurité (Keycloak)
+
+L'authentification repose sur **Keycloak** (realm `deliverx`, importé automatiquement au démarrage du conteneur depuis `docker/keycloak/deliverx-realm.json`).
+
+- **Gateway** : resource server OAuth2 — les GET sont publics, toute mutation (POST/PUT/PATCH/DELETE) exige un JWT Keycloak valide.
+- **driver-client-service** : valide aussi le JWT lui-même (défense en profondeur) et applique les règles fines par rôle : écritures réservées au rôle `admin`, endpoint self-service `/clients/me` pour tout utilisateur authentifié.
+- Les rôles sont portés par le client Keycloak `driver-client-service` (`resource_access.driver-client-service.roles`).
+
+| Utilisateur de test | Mot de passe | Rôle |
+|---------------------|--------------|------|
+| `admin1` | `admin123` | admin (écriture) |
+| `client1` | `client123` | user (lecture / self-service) |
+
+Test automatisé de la chaîne complète (401 / 403 / 201 via le Gateway) :
+
+```bash
+bash scripts/validate-driver-client-auth.sh
 ```
 
 ## Communication inter-services (OpenFeign)

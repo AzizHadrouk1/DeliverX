@@ -42,6 +42,7 @@ services:
       - "8080:8080"
     volumes:
       - ./docker/keycloak/deliverx-realm.json:/opt/keycloak/data/import/deliverx-realm.json
+      - ./docker/keycloak/themes/deliverx:/opt/keycloak/themes/deliverx
       - keycloak_data:/opt/keycloak/data
     networks:
       - deliverx-network
@@ -291,12 +292,10 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      SPRING_DATA_MONGODB_HOST: mongodb
-      SPRING_DATA_MONGODB_PORT: "27017"
-      SPRING_DATA_MONGODB_DATABASE: tracking_db
-      SPRING_DATA_MONGODB_USERNAME: tracking_user
-      SPRING_DATA_MONGODB_PASSWORD: tracking_pass
-      SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+      # config-repo/TRACKING-SERVICE.properties sets spring.data.mongodb.uri (not
+      # host/port), and Spring Data Mongo ignores host/port once a uri is present -
+      # so the uri itself must be overridden here, not the individual host/port vars.
+      SPRING_DATA_MONGODB_URI: mongodb://tracking_user:tracking_pass@mongodb:27017/tracking_db?authSource=admin
     ports:
       - "8086:8086"
     networks:
