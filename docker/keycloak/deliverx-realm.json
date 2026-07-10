@@ -1,0 +1,97 @@
+{
+  "realm": "deliverx",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "accessTokenLifespan": 900,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "roles": {
+    "client": {
+      "driver-client-service": [
+        { "name": "admin", "description": "Full write access to drivers and clients" },
+        { "name": "user", "description": "Read-only / authenticated access" }
+      ]
+    }
+  },
+  "clients": [
+    {
+      "clientId": "admin-portal",
+      "name": "DeliverX Admin Portal",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:4201/*"],
+      "webOrigins": ["http://localhost:4201"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "client-portal",
+      "name": "DeliverX Client Portal",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "driver-client-service",
+      "name": "DeliverX Driver & Client Service",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "redirectUris": ["http://localhost:8082/*"],
+      "webOrigins": ["http://localhost:8082"]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "admin1@deliverx.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "admin123", "temporary": false }
+      ],
+      "clientRoles": {
+        "driver-client-service": ["admin"]
+      }
+    },
+    {
+      "username": "client1",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "client1@deliverx.com",
+      "firstName": "Client",
+      "lastName": "User",
+      "credentials": [
+        { "type": "password", "value": "client123", "temporary": false }
+      ],
+      "clientRoles": {
+        "driver-client-service": ["user"]
+      }
+    }
+  ]
+}

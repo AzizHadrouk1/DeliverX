@@ -1,0 +1,83 @@
+<section>
+  <div class="header">
+    <div>
+      <h1>Clients</h1>
+      <p>Manage client accounts and contact details.</p>
+    </div>
+    <div class="header__actions">
+      <a routerLink="/drivers" class="btn btn--ghost">View drivers</a>
+      <a routerLink="/clients/new" class="btn btn--primary">Add client</a>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <label>
+      Filter by status
+      <select [(ngModel)]="selectedStatus" (change)="load()" name="status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Filter by type
+      <select [(ngModel)]="selectedType" (change)="load()" name="type">
+        <option value="">All</option>
+        @for (type of types; track type) {
+          <option [value]="type">{{ type }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (loading()) {
+    <lib-loading-state />
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Company</th>
+            <th>City</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (client of clients(); track client.id) {
+            <tr>
+              <td>{{ client.firstName }} {{ client.lastName }}</td>
+              <td>{{ client.email }}</td>
+              <td>{{ client.phone }}</td>
+              <td>{{ client.companyName || '—' }}</td>
+              <td>{{ client.city }}</td>
+              <td>{{ client.type }}</td>
+              <td>
+                <lib-status-badge [label]="client.status ?? 'ACTIVE'" [tone]="(client.status ?? 'ACTIVE') | statusTone" />
+              </td>
+              <td class="actions">
+                <a [routerLink]="['/clients', client.id, 'edit']">Edit</a>
+                <button type="button" (click)="deleteClient(client.id!)">Delete</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8">No clients found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

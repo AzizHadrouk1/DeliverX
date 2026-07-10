@@ -1,0 +1,49 @@
+<section class="form-page">
+  <a routerLink="/drivers">← Back to drivers</a>
+  <h1>{{ isEdit ? 'Edit driver' : 'Add driver' }}</h1>
+
+  <form (ngSubmit)="submit()">
+    <div class="grid">
+      <label>
+        First name
+        <input [(ngModel)]="driver.firstName" name="firstName" required />
+      </label>
+      <label>
+        Last name
+        <input [(ngModel)]="driver.lastName" name="lastName" required />
+      </label>
+      <label>
+        Email
+        <input type="email" [(ngModel)]="driver.email" name="email" required />
+      </label>
+      <label>
+        Phone
+        <input [(ngModel)]="driver.phone" name="phone" required />
+      </label>
+      <label>
+        License number
+        <input [(ngModel)]="driver.licenseNumber" name="licenseNumber" required />
+      </label>
+      <label>
+        Status
+        <select [(ngModel)]="driver.status" name="status" required>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Vehicle ID
+        <input type="number" [(ngModel)]="driver.vehicleId" name="vehicleId" />
+      </label>
+    </div>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <button type="submit" class="btn" [disabled]="saving()">
+      {{ saving() ? 'Saving...' : 'Save driver' }}
+    </button>
+  </form>
+</section>
