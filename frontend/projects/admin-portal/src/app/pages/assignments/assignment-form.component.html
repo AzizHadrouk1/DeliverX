@@ -1,0 +1,44 @@
+<section class="form-page">
+  <a routerLink="/assignments">← Back to assignments</a>
+  <h1>{{ isEdit ? 'Edit assignment' : 'New assignment' }}</h1>
+
+  <form (ngSubmit)="submit()">
+    <div class="grid">
+      <label>
+        Delivery
+        <select [(ngModel)]="assignment.deliveryId" name="deliveryId" required [disabled]="isEdit">
+          <option [value]="0" disabled>Select a pending delivery</option>
+          @for (delivery of deliveries(); track delivery.id) {
+            <option [value]="delivery.id">#{{ delivery.id }} — {{ delivery.pickupAddress }} → {{ delivery.deliveryAddress }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Driver
+        <select [(ngModel)]="assignment.driverId" name="driverId" required>
+          <option [value]="0" disabled>Select an available driver</option>
+          @for (driver of drivers(); track driver.id) {
+            <option [value]="driver.id">{{ driver.firstName }} {{ driver.lastName }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Vehicle
+        <select [(ngModel)]="assignment.vehicleId" name="vehicleId" required>
+          <option [value]="0" disabled>Select an available vehicle</option>
+          @for (vehicle of vehicles(); track vehicle.id) {
+            <option [value]="vehicle.id">{{ vehicle.licensePlate }} — {{ vehicle.brand }} {{ vehicle.model }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <button type="submit" class="btn" [disabled]="saving()">
+      {{ saving() ? 'Saving...' : 'Save assignment' }}
+    </button>
+  </form>
+</section>

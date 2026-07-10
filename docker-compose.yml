@@ -66,6 +66,232 @@ services:
       timeout: 5s
       retries: 5
 
+  eureka-server:
+    build:
+      context: ./eureka-server
+    container_name: eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    networks:
+      - deliverx-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8761' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  config-server:
+    build:
+      context: ./config-server
+    container_name: config-server
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS: file:/config-repo/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    volumes:
+      - ./config-repo:/config-repo:ro
+    ports:
+      - "8888:8888"
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8888' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  gateway:
+    build:
+      context: ./GateWay
+    container_name: gateway
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8090
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    ports:
+      - "8090:8090"
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  assignment-service:
+    build:
+      context: ./assignment-service
+    container_name: assignment-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8081
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    ports:
+      - "8081:8081"
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  vehicle-service:
+    build:
+      context: ./vehicle-service
+    container_name: vehicle-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8083
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    ports:
+      - "8083:8083"
+    volumes:
+      - vehicle_data:/app/data
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  driver-client-service:
+    build:
+      context: ./driver-client-service
+    container_name: driver-client-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8082
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    ports:
+      - "8087:8082"
+    volumes:
+      - driver_client_data:/app/data
+      - driver_client_uploads:/app/uploads
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  package-service:
+    build:
+      context: ./package-service
+    container_name: package-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8085
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    ports:
+      - "8085:8085"
+    networks:
+      - deliverx-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  delivery-service:
+    build:
+      context: ./delivery-service
+    container_name: delivery-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8084
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/delivery_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: delivery_user
+      SPRING_DATASOURCE_PASSWORD: delivery_pass
+    ports:
+      - "8084:8084"
+    networks:
+      - deliverx-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  tracking-service:
+    build:
+      context: ./tracking-service
+    container_name: tracking-service
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8086
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: "27017"
+      SPRING_DATA_MONGODB_DATABASE: tracking_db
+      SPRING_DATA_MONGODB_USERNAME: tracking_user
+      SPRING_DATA_MONGODB_PASSWORD: tracking_pass
+      SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+    ports:
+      - "8086:8086"
+    networks:
+      - deliverx-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  admin-portal:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.admin
+    container_name: admin-portal
+    restart: unless-stopped
+    ports:
+      - "4201:80"
+    networks:
+      - deliverx-network
+    depends_on:
+      - gateway
+
+  client-portal:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.client
+    container_name: client-portal
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    networks:
+      - deliverx-network
+    depends_on:
+      - gateway
+
 networks:
   deliverx-network:
     driver: bridge
@@ -74,4 +300,7 @@ volumes:
   mysql_data:
   h2_data:
   mongodb_data:
+  vehicle_data:
+  driver_client_data:
+  driver_client_uploads:
   keycloak_data:
