@@ -22,6 +22,14 @@
   },
   "clients": [
     {
+      "clientId": "account",
+      "enabled": false
+    },
+    {
+      "clientId": "account-console",
+      "enabled": false
+    },
+    {
       "clientId": "admin-portal",
       "name": "DeliverX Admin Portal",
       "enabled": true,
