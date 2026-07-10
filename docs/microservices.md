@@ -9,6 +9,15 @@
 | package-service | 8085 | PACKAGE-SERVICE | `/packages/**` | In-memory | [Package](services/package-service.md) |
 | tracking-service | 8086 | TRACKING-SERVICE | `/tracking/**`, `/ws/**` | MongoDB | [Tracking](services/tracking-service.md) |
 
+## driver-client-service
+
+Microservice de gestion des conducteurs et clients avec :
+
+- CRUD complet sur `/drivers` et `/clients` (recherche, filtres, pagination, tri)
+- Sécurité Keycloak : écritures réservées au rôle `admin`, lectures publiques
+- Self-service `/clients/me` (GET/PUT) basé sur le claim `email` du JWT
+- Persistance MySQL (`driver_client_db`) avec historique d'audit **Hibernate Envers** (`drivers_aud`, `clients_aud`)
+
 ## Maturité
 
 | Service | État |

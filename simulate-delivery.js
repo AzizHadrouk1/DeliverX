@@ -1,5 +1,48 @@
 const http = require('http');
 
+// The Gateway requires a valid Keycloak JWT on every write (POST/PUT/PATCH/DELETE)
+// since driver-client-service's security was wired up. Log in the same way the
+// admin-portal frontend does (password grant against the public admin-portal
+// client) so this script's pushes actually get through instead of silently 401ing.
+const KEYCLOAK_TOKEN_URL = 'http://localhost:8080/realms/deliverx/protocol/openid-connect/token';
+const AUTH_USERNAME = 'admin1';
+const AUTH_PASSWORD = 'admin123';
+
+function fetchAccessToken(callback) {
+  const body = 'grant_type=password&client_id=admin-portal' +
+    '&username=' + encodeURIComponent(AUTH_USERNAME) +
+    '&password=' + encodeURIComponent(AUTH_PASSWORD);
+
+  const req = http.request(
+    'http://localhost:8080/realms/deliverx/protocol/openid-connect/token',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(body)
+      }
+    },
+    (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode !== 200) {
+          return callback(new Error(`Keycloak login failed: HTTP ${res.statusCode} - ${data}`));
+        }
+        try {
+          const token = JSON.parse(data).access_token;
+          callback(null, token);
+        } catch (e) {
+          callback(e);
+        }
+      });
+    }
+  );
+  req.on('error', callback);
+  req.write(body);
+  req.end();
+}
+
 const deliveryId = "1";
 const route = [
   { lat: 36.8065, lng: 10.1815, note: "Driver left the Tunis main depot", status: "IN_TRANSIT" },
@@ -14,6 +57,7 @@ const route = [
 ];
 
 let index = 0;
+let accessToken = null;
 
 function sendPing() {
   if (index >= route.length) {
@@ -41,12 +85,18 @@ function sendPing() {
       method: method,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body)
+        'Content-Length': Buffer.byteLength(body),
+        'Authorization': 'Bearer ' + accessToken
       }
     }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
-      res.on('end', () => callback(null, data));
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          return callback(new Error(`HTTP ${res.statusCode} on ${method} ${path}: ${data}`));
+        }
+        callback(null, data);
+      });
     });
 
     req.on('error', (e) => callback(e));
@@ -79,6 +129,16 @@ function sendPing() {
 
 console.log("=========================================");
 console.log(`Starting Driver Simulator for Delivery #${deliveryId}`);
-console.log("Updating live map positions every 3s...");
+console.log("Logging in to Keycloak as " + AUTH_USERNAME + "...");
 console.log("=========================================");
-sendPing();
+
+fetchAccessToken((err, token) => {
+  if (err) {
+    console.error("Could not authenticate against Keycloak - is `docker compose up -d keycloak` running?");
+    console.error(err.message);
+    process.exit(1);
+  }
+  accessToken = token;
+  console.log("Authenticated. Updating live map positions every 3s...\n");
+  sendPing();
+});

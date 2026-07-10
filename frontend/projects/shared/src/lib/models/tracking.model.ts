@@ -6,6 +6,17 @@ export type PackageStatus =
   | 'FAILED'
   | 'RETURNED';
 
+export interface LocationUpdateRequest {
+  // Required by the backend's validation even though it's also a path
+  // variable: @Valid runs on the body before the controller sets it.
+  deliveryId: string;
+  latitude: number;
+  longitude: number;
+  speed?: number | null;
+  heading?: number | null;
+  notes?: string | null;
+}
+
 export interface TrackingEvent {
   id: string;
   deliveryId: string;
