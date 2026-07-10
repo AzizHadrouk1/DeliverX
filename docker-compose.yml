@@ -118,6 +118,10 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      # issuer-uri stays localhost:8080 (matches the "iss" claim on tokens issued
+      # to a client requesting them from the host) - only the key-fetch URL needs
+      # to resolve on the Docker network.
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/deliverx/protocol/openid-connect/certs
     ports:
       - "8090:8090"
     networks:
@@ -127,6 +131,8 @@ services:
         condition: service_healthy
       config-server:
         condition: service_healthy
+      keycloak:
+        condition: service_started
 
   assignment-service:
     build:
@@ -180,6 +186,13 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/driver_client_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: driver_client_user
+      SPRING_DATASOURCE_PASSWORD: driver_client_pass
+      # issuer-uri stays localhost:8080 (matches the "iss" claim on tokens issued
+      # to a client requesting them from the host) - only the key-fetch URL needs
+      # to resolve on the Docker network.
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/deliverx/protocol/openid-connect/certs
     ports:
       - "8087:8082"
     volumes:
@@ -188,10 +201,14 @@ services:
     networks:
       - deliverx-network
     depends_on:
+      mysql:
+        condition: service_healthy
       eureka-server:
         condition: service_healthy
       config-server:
         condition: service_healthy
+      keycloak:
+        condition: service_started
 
   package-service:
     build:
@@ -300,7 +317,7 @@ volumes:
   mysql_data:
   h2_data:
   mongodb_data:
+  keycloak_data:
   vehicle_data:
   driver_client_data:
   driver_client_uploads:
-  keycloak_data:

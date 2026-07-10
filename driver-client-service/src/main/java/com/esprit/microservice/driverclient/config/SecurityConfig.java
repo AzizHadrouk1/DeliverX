@@ -30,13 +30,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // ❌ disable CSRF (needed for APIs + H2 console)
+                // ❌ disable CSRF (needed for APIs)
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // ❌ allow H2 console in iframe
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                )
 
                 // ❌ stateless (JWT via Keycloak, no server session)
                 .sessionManagement(session ->
@@ -44,9 +39,6 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-
-                        // ✅ H2 CONSOLE
-                        .requestMatchers("/h2-console/**").permitAll()
 
                         // health endpoints
                         .requestMatchers("/health", "/drivers/health", "/clients/health", "/hello", "/actuator/**")
