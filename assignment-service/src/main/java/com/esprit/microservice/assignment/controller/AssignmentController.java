@@ -2,6 +2,7 @@ package com.esprit.microservice.assignment.controller;
 
 
 import com.esprit.microservice.assignment.dto.AssignmentDTO;
+import com.esprit.microservice.assignment.dto.AssignmentDetailsDTO;
 import com.esprit.microservice.assignment.dto.AssignmentResponseDTO;
 import com.esprit.microservice.assignment.dto.StatusUpdateDTO;
 import com.esprit.microservice.assignment.model.AssignmentStatus;
@@ -14,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/assignments")
-@CrossOrigin("*")
 public class AssignmentController {
 
     private final AssignmentService service;
@@ -31,6 +31,11 @@ public class AssignmentController {
     @GetMapping("/{id}")
     public AssignmentResponseDTO getAssignmentById(@PathVariable Long id) {
         return service.getAssignmentById(id);
+    }
+
+    @GetMapping("/{id}/details")
+    public AssignmentDetailsDTO getAssignmentDetails(@PathVariable Long id) {
+        return service.getAssignmentDetails(id);
     }
 
     @PostMapping
