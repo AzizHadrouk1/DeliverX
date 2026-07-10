@@ -1,6 +1,20 @@
-# DeliverX — Architecture Microservices
+# DeliverX — Plateforme de livraison Microservices
 
-DeliverX est une plateforme de livraison construite avec **Spring Boot 3.2.5**, **Spring Cloud Gateway**, **Netflix Eureka** et **Spring Cloud Config Server**. L'architecture repose sur des microservices indépendants qui s'enregistrent dynamiquement auprès d'Eureka et récupèrent leur configuration centralisée depuis un dépôt Git.
+DeliverX est une plateforme de livraison construite avec **Spring Boot 3.2.5**, **Spring Cloud Gateway**, **Netflix Eureka** et **Spring Cloud Config Server**.
+
+## Prérequis
+
+- **Docker** et **Docker Compose**
+- **Java 17** (JDK obligatoire pour Spring Boot 3.x)
+- **Maven** (ou Maven Wrapper `mvnw` / `mvnw.cmd` inclus dans chaque service)
+
+Vérifier les installations :
+
+```powershell
+java -version
+docker --version
+docker compose version
+```
 
 ## Architecture
 
@@ -11,156 +25,106 @@ flowchart TB
     ConfigServer[Config Server :8888] --> Eureka
     GitRepo[config-repo Git] --> ConfigServer
 
-    Gateway -->|"/assignment/**"| Assignment[Assignment :8081]
-    Gateway -->|"/drivers/**"| DriverClient[DriverClient :8082]
-    Gateway -->|"/vehicles/**"| Vehicle[Vehicle :8083]
-    Gateway -->|"/deliveries/**"| Delivery[Delivery :8084]
-    Gateway -->|"/packages/**"| Package[Package :8085]
+    Gateway --> Assignment[Assignment :8081]
+    Gateway --> DriverClient[DriverClient :8082]
+    Gateway --> Vehicle[Vehicle :8083]
+    Gateway --> Delivery[Delivery :8084]
+    Gateway --> Package[Package :8085]
 
     Delivery -->|"OpenFeign"| Package
-
-    Gateway -->|fetch config| ConfigServer
-    Assignment -->|fetch config| ConfigServer
-    DriverClient -->|fetch config| ConfigServer
-    Vehicle -->|fetch config| ConfigServer
-    Delivery -->|fetch config| ConfigServer
-    Package -->|fetch config| ConfigServer
-
-    Assignment --> Eureka
-    DriverClient --> Eureka
-    Vehicle --> Eureka
-    Delivery --> Eureka
-    Package --> Eureka
-    Gateway --> Eureka
+    Delivery --> DeliveryDB[(delivery_db MySQL)]
 ```
 
-## Services
+Documentation complète : voir le dossier [`docs/`](docs/) ou lancer `mkdocs serve`.
 
-| Dossier | Nom Eureka | Port | Rôle | Préfixe Gateway |
-|---------|------------|------|------|-----------------|
-| `eureka-server/` | eureka-server | 8761 | Service Discovery | — |
-| `config-server/` | CONFIG-SERVER | 8888 | Configuration centralisée | — |
-| `GateWay/` | Gateway | 8090 | API Gateway (routage) | — |
-| `assignment-service/` | ASSIGNMENT-SERVICE | 8081 | Gestion des affectations | `/assignment/**` |
-| `driver-client-service/` | DRIVER-CLIENT-SERVICE | 8082 | Chauffeurs et clients | `/drivers/**` |
-| `vehicle-service/` | VEHICLE-SERVICE | 8083 | Gestion des véhicules | `/vehicles/**` |
-| `delivery-service/` | DELIVERY-SERVICE | 8084 | Gestion des livraisons | `/deliveries/**` |
-| `package-service/` | PACKAGE-SERVICE | 8085 | Gestion des colis | `/packages/**` |
+## Ports et URLs
 
-## Spring Cloud Config Server
+### Infrastructure
 
-La configuration des microservices (ports, Eureka, logging, actuator) est **externalisée** dans le dépôt Git [`config-repo/`](config-repo/).
+| Service | Port | URL |
+|---------|------|-----|
+| Eureka Server | 8761 | http://localhost:8761 |
+| Config Server | 8888 | http://localhost:8888 |
+| API Gateway | 8090 | http://localhost:8090 |
 
-| Fichier Git | Application |
-|-------------|-------------|
-| `ASSIGNMENT-SERVICE.properties` | assignment-service |
-| `DRIVER-CLIENT-SERVICE.properties` | driver-client-service |
-| `VEHICLE-SERVICE.properties` | vehicle-service |
-| `DELIVERY-SERVICE.properties` | delivery-service |
-| `PACKAGE-SERVICE.properties` | package-service |
-| `Gateway.properties` | GateWay |
+### Microservices
 
-Chaque client conserve un `application.properties` local minimal :
+| Service | Port | URL directe | Préfixe Gateway |
+|---------|------|-------------|-----------------|
+| assignment-service | 8081 | http://localhost:8081 | `/assignment/**` |
+| driver-client-service | 8082 | http://localhost:8082 | `/drivers/**` |
+| vehicle-service | 8083 | http://localhost:8083 | `/vehicles/**` |
+| **delivery-service** | **8084** | http://localhost:8084 | `/deliveries/**` |
+| package-service | 8085 | http://localhost:8085 | `/packages/**` |
+| **tracking-service** | **8086** | http://localhost:8086 | `/tracking/**` |
 
-```properties
-spring.application.name=ASSIGNMENT-SERVICE
-spring.config.import=optional:configserver:http://localhost:8888
-```
+### Swagger (delivery-service)
 
-Le Config Server lit la configuration depuis le dépôt GitHub public du projet :
+| Ressource | URL |
+|-----------|-----|
+| Swagger UI | http://localhost:8084/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8084/api-docs |
 
-```properties
-spring.cloud.config.server.git.uri=https://github.com/AzizHadrouk1/DeliverX.git
-spring.cloud.config.server.git.default-label=main
-spring.cloud.config.server.git.clone-on-start=true
-spring.cloud.config.server.git.search-paths=config-repo
-```
+### Bases de données (Docker — 3 conteneurs)
 
-`search-paths=config-repo` indique au Config Server de chercher les fichiers `.properties` dans le sous-dossier `config-repo/` du monorepo DeliverX.
+| Conteneur | Port hôte | Bases | Microservices |
+|-----------|-----------|-------|---------------|
+| mysql | 3306 | delivery_db, driver_client_db, package_db | delivery, driver-client, package |
+| h2 | 9092 (TCP), 8082 (console) | assignment_db, vehicle_db | assignment, vehicle |
+| mongodb | 27017 | tracking_db | tracking (futur) |
 
-### Mettre à jour la configuration (workflow production)
+| Base | Utilisateur | Mot de passe |
+|------|-------------|--------------|
+| delivery_db | delivery_user | delivery_pass |
+| driver_client_db | driver_client_user | driver_client_pass |
+| package_db | package_user | package_pass |
+| tracking_db | tracking_user | tracking_pass |
 
-1. Modifier un fichier dans `config-repo/` (ex. `ASSIGNMENT-SERVICE.properties`)
-2. Committer et pousser vers GitHub :
-   ```powershell
-   git add config-repo/
-   git commit -m "Update configuration"
-   git push origin main
-   ```
-3. Redémarrer **Config Server** (re-clone la branche `main`)
-4. Redémarrer le **microservice concerné**
+### Frontend (optionnel)
 
-## Communication inter-services (OpenFeign)
-
-**delivery-service** communique avec **package-service** via **OpenFeign** pour récupérer les informations d'un colis avant de préparer une livraison.
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Gateway
-    participant Delivery as DELIVERY-SERVICE
-    participant Package as PACKAGE-SERVICE
-    participant Eureka
-
-    Client->>Gateway: GET /deliveries/package/1
-    Gateway->>Delivery: GET /package/1
-    Delivery->>Eureka: resolve PACKAGE-SERVICE
-    Delivery->>Package: GET /packages/1 via OpenFeign
-    Package-->>Delivery: PackageDTO
-    Delivery-->>Gateway: JSON response
-    Gateway-->>Client: JSON response
-```
-
-## Prérequis
-
-- **JDK 17** (obligatoire — Spring Boot 3.x)
-- Maven (inclus via `mvnw` / `mvnw.cmd` dans chaque projet)
-- Git (pour le dépôt `config-repo/`)
-
-Vérifier Java :
-
-```powershell
-java -version
-```
+| Portail | Port | URL |
+|---------|------|-----|
+| Client Portal | 4200 | http://localhost:4200 |
+| Admin Portal | 4201 | http://localhost:4201 |
 
 ## Démarrage
 
-Lancer les services **dans cet ordre**, chacun dans un terminal séparé :
+### 1. Démarrer les bases de données
 
-### 1. Eureka Server (obligatoire en premier)
+```powershell
+docker compose up -d
+```
+
+Vérifier l'état :
+
+```powershell
+docker compose ps
+```
+
+### 2. Construire les services
+
+```powershell
+cd delivery-service
+.\mvnw.cmd clean package -DskipTests
+```
+
+Répéter pour les autres services si nécessaire.
+
+### 3. Démarrer l'infrastructure Spring Cloud
+
+Dans l'ordre, chaque service dans un terminal séparé :
 
 ```powershell
 cd eureka-server
 .\mvnw.cmd spring-boot:run
 ```
 
-Dashboard : [http://localhost:8761](http://localhost:8761)
-
-### 2. Config Server (avant les microservices)
-
 ```powershell
 cd config-server
 .\mvnw.cmd spring-boot:run
 ```
 
-Test : [http://localhost:8888/ASSIGNMENT-SERVICE/default](http://localhost:8888/ASSIGNMENT-SERVICE/default)
-
-### 3. Microservices (5 terminaux)
-
-```powershell
-cd assignment-service
-.\mvnw.cmd spring-boot:run
-```
-
-```powershell
-cd driver-client-service
-.\mvnw.cmd spring-boot:run
-```
-
-```powershell
-cd vehicle-service
-.\mvnw.cmd spring-boot:run
-```
+### 4. Démarrer les microservices
 
 ```powershell
 cd package-service
@@ -172,45 +136,90 @@ cd delivery-service
 .\mvnw.cmd spring-boot:run
 ```
 
-> **Important :** démarrer `package-service` avant `delivery-service` pour que la communication OpenFeign fonctionne.
+> Démarrer `package-service` avant `delivery-service` pour la communication OpenFeign.
 
-### 4. API Gateway (en dernier)
+Puis les autres services et le Gateway :
 
 ```powershell
 cd GateWay
 .\mvnw.cmd spring-boot:run
 ```
 
-## Visualiser les services dans Eureka
+### 5. Migration automatique (delivery-service)
 
-1. Ouvrir [http://localhost:8761](http://localhost:8761)
-2. Cliquer sur **"Instances currently registered with Eureka"**
-3. Vérifier que **7 instances** sont enregistrées :
+Les tables MySQL sont créées automatiquement par Hibernate :
 
-| Application | Statut attendu |
-|-------------|----------------|
-| CONFIG-SERVER | UP |
-| GATEWAY | UP |
-| ASSIGNMENT-SERVICE | UP |
-| DRIVER-CLIENT-SERVICE | UP |
-| VEHICLE-SERVICE | UP |
-| DELIVERY-SERVICE | UP |
-| PACKAGE-SERVICE | UP |
-
-## Tests Config Server
-
-```powershell
-curl http://localhost:8888/ASSIGNMENT-SERVICE/default
-curl http://localhost:8888/Gateway/default
-curl http://localhost:8888/DELIVERY-SERVICE/default
+```properties
+spring.jpa.hibernate.ddl-auto=update
 ```
 
-Réponse attendue : JSON avec `propertySources` contenant `server.port`, `eureka.client.*`, etc.
+Aucune migration manuelle n'est requise. Au premier démarrage, les entités `Delivery` et `DeliveryProof` génèrent les tables `deliveries` et `delivery_proofs`.
 
-Pour tester une modification centralisée :
-1. Modifier une propriété dans `config-repo/ASSIGNMENT-SERVICE.properties`
-2. `git add config-repo/` puis `git commit -m "update config"` et `git push origin main`
-3. Redémarrer Config Server puis le microservice concerné
+### Arrêt des conteneurs
+
+```powershell
+docker compose down
+```
+
+### Suppression des conteneurs et volumes
+
+```powershell
+docker compose down -v
+```
+
+### Reconstruction complète
+
+```powershell
+docker compose down -v
+docker compose up -d --force-recreate
+```
+
+## API Delivery Service
+
+Base URL : `http://localhost:8084/api/deliveries`
+
+Via Gateway : `http://localhost:8090/deliveries/api/deliveries`
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/deliveries` | Liste paginée (filtres : status, driverId, date) |
+| GET | `/api/deliveries/{id}` | Détail |
+| POST | `/api/deliveries` | Créer |
+| PUT | `/api/deliveries/{id}` | Modifier (PENDING uniquement) |
+| PATCH | `/api/deliveries/{id}/status` | Changer le statut |
+| DELETE | `/api/deliveries/{id}` | Supprimer ou annuler |
+| GET | `/api/deliveries/{id}/proof` | Preuve de livraison |
+| POST | `/api/deliveries/{id}/proof` | Créer une preuve |
+| GET | `/api/deliveries/driver/{driverId}` | Par conducteur |
+| GET | `/api/deliveries/schedule?date=YYYY-MM-DD` | Par date |
+
+### Exemples
+
+```powershell
+curl "http://localhost:8084/api/deliveries?page=0&size=10&status=PENDING"
+```
+
+```powershell
+curl -X POST http://localhost:8084/api/deliveries -H "Content-Type: application/json" -d "{\"packageId\":1,\"clientId\":1,\"driverId\":1,\"vehicleId\":1,\"pickupAddress\":\"Paris\",\"deliveryAddress\":\"Lyon\",\"scheduledDate\":\"2026-06-30T14:00:00\"}"
+```
+
+```powershell
+curl -X PATCH http://localhost:8084/api/deliveries/1/status -H "Content-Type: application/json" -d "{\"status\":\"ASSIGNED\"}"
+```
+
+```powershell
+curl http://localhost:8090/deliveries/health
+curl http://localhost:8090/deliveries/package/1
+```
+
+## Communication inter-services (OpenFeign)
+
+`delivery-service` appelle `package-service` via OpenFeign :
+
+```powershell
+curl http://localhost:8084/package/1
+curl http://localhost:8090/deliveries/package/1
+```
 
 ## Tests via Gateway
 
@@ -222,90 +231,33 @@ Pour tester une modification centralisée :
 | `GET http://localhost:8090/deliveries/hello` | `{ "message": "Hello from Delivery Service" }` |
 | `GET http://localhost:8090/packages/health` | `{ "status": "UP", "service": "PACKAGE-SERVICE" }` |
 
-## Tests OpenFeign (delivery ↔ package)
-
-### Colis mock disponibles
-
-| ID | Tracking | Destination | Statut |
-|----|----------|-------------|--------|
-| 1 | DX-TRK-001 | Tunis | READY |
-| 2 | DX-TRK-002 | Sfax | IN_TRANSIT |
-| 3 | DX-TRK-003 | Sousse | DELIVERED |
-
-### 1. Package-service directement
+## Documentation MkDocs
 
 ```powershell
-curl http://localhost:8085/packages/1
+pip install mkdocs mkdocs-material
+mkdocs serve
 ```
 
-### 2. OpenFeign — delivery-service directement
-
-```powershell
-curl http://localhost:8084/package/1
-```
-
-Réponse attendue :
-
-```json
-{
-  "deliveryService": "DELIVERY-SERVICE",
-  "message": "Delivery prepared for package",
-  "package": {
-    "id": 1,
-    "trackingNumber": "DX-TRK-001",
-    "weight": 2.5,
-    "destination": "Tunis",
-    "status": "READY"
-  },
-  "communication": "OpenFeign -> PACKAGE-SERVICE"
-}
-```
-
-### 3. OpenFeign via Gateway
-
-```powershell
-curl http://localhost:8090/deliveries/package/1
-```
-
-### 4. Cas d'erreur (colis inexistant)
-
-```powershell
-curl -i http://localhost:8084/package/99
-```
-
-Réponse attendue : **HTTP 404**
-
-## Compilation
-
-```powershell
-cd config-server
-.\mvnw.cmd package -DskipTests
-
-cd ..\package-service
-.\mvnw.cmd package -DskipTests
-
-cd ..\delivery-service
-.\mvnw.cmd package -DskipTests
-```
+Ouvrir http://127.0.0.1:8000
 
 ## Structure du dépôt
 
 ```
 DeliverX/
-├── .gitignore
-├── README.md
-├── config-repo/              # Dépôt Git de configuration
+├── docker-compose.yml        # MySQL + H2 + MongoDB (3 conteneurs)
+├── mkdocs.yml                # Configuration documentation
+├── docs/                     # Documentation MkDocs
+├── config-repo/              # Configuration centralisée
 ├── config-server/
 ├── eureka-server/
 ├── GateWay/
 ├── assignment-service/
 ├── driver-client-service/
 ├── vehicle-service/
-├── delivery-service/
-└── package-service/
+├── delivery-service/         # CRUD livraisons + MySQL
+├── package-service/
+└── frontend/                 # Angular 19
 ```
-
-Chaque dossier de service est un **projet Spring Boot indépendant** avec son propre `pom.xml` et wrapper Maven.
 
 ## Stack technique
 
@@ -314,7 +266,11 @@ Chaque dossier de service est un **projet Spring Boot indépendant** avec son pr
 | Spring Boot | 3.2.5 |
 | Spring Cloud | 2023.0.1 |
 | Java | 17 |
+| MySQL | 8.0 (delivery-service) |
+| MongoDB | 7 (tracking-service, futur) |
+| H2 | vehicle-service, assignment-service |
 | Netflix Eureka | Service Discovery |
-| Spring Cloud Config | Configuration centralisée (backend Git) |
+| Spring Cloud Config | Configuration centralisée |
 | Spring Cloud Gateway | API Gateway |
 | OpenFeign | Communication inter-services |
+| SpringDoc OpenAPI | Swagger UI (delivery-service) |

@@ -1,0 +1,211 @@
+<!-- ══════════════════════════════════════════════════════════
+     Track your package — Client Portal
+     ══════════════════════════════════════════════════════════ -->
+
+<div class="track-page">
+
+  <!-- ── Search bar ─────────────────────────────────────────── -->
+  <header class="track-header">
+    <div class="track-header__inner">
+      <h1>Track your delivery</h1>
+      <p class="track-header__sub">Enter your package ID to follow it in real time.</p>
+
+      <form class="search-bar" (ngSubmit)="search()">
+        <div class="search-bar__icon">📦</div>
+        <input
+          id="pkg-search-input"
+          type="text"
+          name="packageId"
+          [(ngModel)]="packageId"
+          placeholder="Package ID  (e.g. 1)"
+          autocomplete="off"
+          required
+        />
+        <button id="pkg-search-btn" type="submit" class="btn btn--primary">
+          Track
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- ── Loading ────────────────────────────────────────────── -->
+  @if (loading()) {
+    <lib-loading-state message="Looking up your package…" />
+  }
+
+  <!-- ── Error ──────────────────────────────────────────────── -->
+  @if (error()) {
+    <div class="alert alert--error">
+      <span>⚠️</span> {{ error() }}
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════
+       Main result area
+       ══════════════════════════════════════════════════════════ -->
+  @if (pkg(); as package) {
+    <div class="result-grid">
+
+      <!-- ── Left column ─────────────────────────────────────── -->
+      <aside class="sidebar">
+
+        <!-- Package card -->
+        <section class="card package-card">
+          <div class="card__head">
+            <div>
+              <p class="label">Tracking number</p>
+              <h2 class="mono">{{ package.trackingNumber }}</h2>
+            </div>
+            <lib-status-badge
+              [label]="package.status"
+              [tone]="package.status | statusTone"
+            />
+          </div>
+
+          <dl class="meta-grid">
+            <div><dt>Package ID</dt><dd>#{{ package.id }}</dd></div>
+            <div><dt>Destination</dt><dd>{{ package.destination }}</dd></div>
+            <div><dt>Weight</dt><dd>{{ package.weight }} kg</dd></div>
+          </dl>
+        </section>
+
+        <!-- Live status indicator -->
+        @if (isLive()) {
+          <section class="card live-card">
+            <div class="live-indicator">
+              <span class="live-dot" [class.live-dot--connected]="wsConnected()"></span>
+              <span class="live-label">
+                {{ wsConnected() ? 'Live tracking active' : 'Connecting…' }}
+              </span>
+            </div>
+
+            @if (currentEvent(); as ev) {
+              <div class="live-stats">
+                <div class="stat">
+                  <span class="stat__icon">🚀</span>
+                  <span class="stat__value">{{ speed(ev) }}</span>
+                  <span class="stat__label">Speed</span>
+                </div>
+                <div class="stat">
+                  <span class="stat__icon">📍</span>
+                  <span class="stat__value">{{ ev.latitude.toFixed(4) }}, {{ ev.longitude.toFixed(4) }}</span>
+                  <span class="stat__label">Coordinates</span>
+                </div>
+                <div class="stat">
+                  <span class="stat__icon">🕐</span>
+                  <span class="stat__value">{{ formatTime(ev.timestamp) }}</span>
+                  <span class="stat__label">Last update</span>
+                </div>
+              </div>
+            }
+          </section>
+        }
+
+        <!-- ETA card -->
+        @if (eta(); as etaInfo) {
+          <section class="card eta-card">
+            <p class="label">Estimated arrival</p>
+            <div class="eta-countdown">{{ etaCountdown() }}</div>
+            <div class="eta-details">
+              <span>📏 {{ etaInfo.distanceKm.toFixed(1) }} km remaining</span>
+              <span>⚡ {{ etaInfo.speedKmh.toFixed(0) }} km/h avg</span>
+            </div>
+          </section>
+        }
+
+        <!-- Delivery info (from delivery-service) -->
+        @if (delivery(); as d) {
+          <section class="card delivery-card">
+            <p class="label">Delivery info</p>
+            <p class="delivery-msg">{{ d.message }}</p>
+            <p class="delivery-meta">{{ d.deliveryService }} · {{ d.communication }}</p>
+          </section>
+        }
+
+      </aside>
+
+      <!-- ── Right column ────────────────────────────────────── -->
+      <main class="main-col">
+
+        <!-- Journey timeline -->
+        <section class="card timeline-card">
+          <h3 class="card__title">Delivery progress</h3>
+          <div class="timeline">
+            @for (step of statusSteps; track step; let i = $index) {
+              <div class="timeline__step"
+                   [class.timeline__step--done]="i <= currentStepIndex()"
+                   [class.timeline__step--active]="i === currentStepIndex()">
+                <div class="timeline__dot">
+                  <span>{{ statusIcons[step] }}</span>
+                </div>
+                <div class="timeline__info">
+                  <p class="timeline__label">{{ statusLabels[step] }}</p>
+                  @if (i === currentStepIndex() && currentEvent()) {
+                    <p class="timeline__time">{{ formatDate(currentEvent()!.timestamp) }} · {{ formatTime(currentEvent()!.timestamp) }}</p>
+                  }
+                </div>
+                @if (i < statusSteps.length - 1) {
+                  <div class="timeline__line"
+                       [class.timeline__line--done]="i < currentStepIndex()">
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Live map -->
+        <section class="card map-card">
+          <h3 class="card__title">
+            Live map
+            @if (isLive() && wsConnected()) {
+              <span class="live-badge">● LIVE</span>
+            }
+          </h3>
+
+          @if (trackingLoaded()) {
+            <div #mapContainer id="tracking-map" class="map-container"></div>
+          } @else {
+            <div class="map-placeholder">
+              <div class="map-placeholder__icon">🗺️</div>
+              <p>Map will appear once the driver starts moving.</p>
+              <p class="map-placeholder__sub">Waiting for first GPS ping…</p>
+            </div>
+          }
+        </section>
+
+        <!-- GPS history feed -->
+        @if (history().length > 0) {
+          <section class="card history-card">
+            <h3 class="card__title">Recent GPS events</h3>
+            <div class="history-feed">
+              @for (ev of history(); track ev.id) {
+                <div class="history-item" [class.history-item--latest]="$first">
+                  <div class="history-item__time">
+                    <span>{{ formatTime(ev.timestamp) }}</span>
+                    <span class="history-item__date">{{ formatDate(ev.timestamp) }}</span>
+                  </div>
+                  <div class="history-item__dot"></div>
+                  <div class="history-item__content">
+                    <span class="history-item__status">
+                      {{ statusIcons[ev.status] }} {{ statusLabels[ev.status] }}
+                    </span>
+                    <span class="history-item__coords">
+                      {{ ev.latitude.toFixed(5) }}, {{ ev.longitude.toFixed(5) }}
+                      @if (ev.speed) { · {{ ev.speed.toFixed(0) }} km/h }
+                    </span>
+                    @if (ev.notes) {
+                      <span class="history-item__notes">{{ ev.notes }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
+      </main>
+    </div><!-- /result-grid -->
+  }<!-- /pkg -->
+
+</div><!-- /track-page -->

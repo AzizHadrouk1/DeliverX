@@ -1,0 +1,28 @@
+<section>
+  <h1>Package management</h1>
+  <p>Track package status, destination, and weight across the network.</p>
+
+  @if (loading()) {
+    <lib-loading-state />
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="cards">
+      @for (pkg of packages(); track pkg.id) {
+        <article>
+          <div class="card__header">
+            <h2>{{ pkg.trackingNumber }}</h2>
+            <lib-status-badge [label]="pkg.status" [tone]="pkg.status | statusTone" />
+          </div>
+          <p>Destination: {{ pkg.destination }}</p>
+          <p>Weight: {{ pkg.weight }} kg</p>
+          <a [routerLink]="['/packages', pkg.id]">View details</a>
+        </article>
+      }
+    </div>
+  }
+</section>

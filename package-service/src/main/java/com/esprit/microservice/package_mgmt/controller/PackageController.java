@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collection;
 import java.util.Map;
 
 @RestController
@@ -19,6 +20,11 @@ public class PackageController {
             2L, new PackageDTO(2L, "DX-TRK-002", 5.0, "Sfax", "IN_TRANSIT"),
             3L, new PackageDTO(3L, "DX-TRK-003", 1.2, "Sousse", "DELIVERED")
     );
+
+    @GetMapping
+    public Collection<PackageDTO> getAllPackages() {
+        return PACKAGES.values();
+    }
 
     @GetMapping("/{id}")
     public PackageDTO getPackage(@PathVariable Long id) {

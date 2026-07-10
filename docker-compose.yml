@@ -1,0 +1,77 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - deliverx-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  h2:
+    image: oscarfonts/h2
+    container_name: h2
+    restart: unless-stopped
+    ports:
+      - "9092:1521"
+      - "8082:81"
+    volumes:
+      - h2_data:/opt/h2-data
+    networks:
+      - deliverx-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./docker/keycloak/deliverx-realm.json:/opt/keycloak/data/import/deliverx-realm.json
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - deliverx-network
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: tracking_user
+      MONGO_INITDB_ROOT_PASSWORD: tracking_pass
+      MONGO_INITDB_DATABASE: tracking_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - deliverx-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  deliverx-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  h2_data:
+  mongodb_data:
+  keycloak_data:

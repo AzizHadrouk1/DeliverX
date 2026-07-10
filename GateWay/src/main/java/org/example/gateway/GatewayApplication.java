@@ -23,17 +23,23 @@ public class GatewayApplication {
                         .filters(f -> f.stripPrefix(1))
                         .uri("lb://ASSIGNMENT-SERVICE"))
                 .route("driver-client", r -> r.path("/drivers/**")
-                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://DRIVER-CLIENT-SERVICE"))
+                .route("client", r -> r.path("/clients/**")
                         .uri("lb://DRIVER-CLIENT-SERVICE"))
                 .route("vehicle", r -> r.path("/vehicles/**")
-                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://VEHICLE-SERVICE"))
                 .route("delivery", r -> r.path("/deliveries/**")
                         .filters(f -> f.stripPrefix(1))
                         .uri("lb://DELIVERY-SERVICE"))
                 .route("package", r -> r.path("/packages/**")
-                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://PACKAGE-SERVICE"))
+                // Tracking Service — REST API
+                .route("tracking", r -> r.path("/tracking/**")
+                        .filters(f -> f.stripPrefix(1))
+                        .uri("lb://TRACKING-SERVICE"))
+                // Tracking Service — WebSocket (STOMP /ws endpoint)
+                .route("tracking-ws", r -> r.path("/ws/**")
+                        .uri("lb://TRACKING-SERVICE"))
                 .build();
     }
 
