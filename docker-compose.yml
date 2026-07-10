@@ -67,6 +67,24 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - deliverx-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   eureka-server:
     build:
       context: ./eureka-server
@@ -145,6 +163,8 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
     ports:
       - "8081:8081"
     networks:
@@ -153,6 +173,8 @@ services:
       eureka-server:
         condition: service_healthy
       config-server:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   vehicle-service:
@@ -244,6 +266,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/delivery_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: delivery_user
       SPRING_DATASOURCE_PASSWORD: delivery_pass
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
     ports:
       - "8084:8084"
     networks:
@@ -254,6 +278,8 @@ services:
       eureka-server:
         condition: service_healthy
       config-server:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   tracking-service:
@@ -317,6 +343,7 @@ volumes:
   h2_data:
   mongodb_data:
   keycloak_data:
+  rabbitmq_data:
   vehicle_data:
   driver_client_data:
   driver_client_uploads:

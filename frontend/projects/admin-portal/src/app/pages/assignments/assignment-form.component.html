@@ -7,27 +7,27 @@
       <label>
         Delivery
         <select [(ngModel)]="assignment.deliveryId" name="deliveryId" required [disabled]="isEdit">
-          <option [value]="0" disabled>Select a pending delivery</option>
+          <option [ngValue]="0" disabled>Select a delivery</option>
           @for (delivery of deliveries(); track delivery.id) {
-            <option [value]="delivery.id">#{{ delivery.id }} — {{ delivery.pickupAddress }} → {{ delivery.deliveryAddress }}</option>
+            <option [ngValue]="delivery.id">#{{ delivery.id }} [{{ delivery.status }}] — {{ delivery.pickupAddress }} → {{ delivery.deliveryAddress }}</option>
           }
         </select>
       </label>
       <label>
         Driver
         <select [(ngModel)]="assignment.driverId" name="driverId" required>
-          <option [value]="0" disabled>Select an available driver</option>
+          <option [ngValue]="0" disabled>Select an available driver</option>
           @for (driver of drivers(); track driver.id) {
-            <option [value]="driver.id">{{ driver.firstName }} {{ driver.lastName }}</option>
+            <option [ngValue]="driver.id">{{ driver.firstName }} {{ driver.lastName }}</option>
           }
         </select>
       </label>
       <label>
         Vehicle
         <select [(ngModel)]="assignment.vehicleId" name="vehicleId" required>
-          <option [value]="0" disabled>Select an available vehicle</option>
+          <option [ngValue]="0" disabled>Select an available vehicle</option>
           @for (vehicle of vehicles(); track vehicle.id) {
-            <option [value]="vehicle.id">{{ vehicle.licensePlate }} — {{ vehicle.brand }} {{ vehicle.model }}</option>
+            <option [ngValue]="vehicle.id">{{ vehicle.licensePlate }} — {{ vehicle.brand }} {{ vehicle.model }}</option>
           }
         </select>
       </label>

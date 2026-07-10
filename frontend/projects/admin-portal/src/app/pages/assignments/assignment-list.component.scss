@@ -60,3 +60,49 @@ th, td {
 .error {
   color: #b91c1c;
 }
+
+.notice {
+  margin-top: 1rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.55rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+}
+
+.details-row td {
+  background: #f9fafb;
+}
+
+.details-loading {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.details-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.details-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.55rem;
+  padding: 0.85rem 1rem;
+
+  h3 {
+    margin: 0 0 0.4rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #6b7280;
+  }
+
+  p {
+    margin: 0 0 0.25rem;
+    font-size: 0.9rem;
+  }
+}

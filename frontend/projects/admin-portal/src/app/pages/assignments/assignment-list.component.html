@@ -2,7 +2,7 @@
   <div class="header">
     <div>
       <h1>Assignment management</h1>
-      <p>Assign drivers and vehicles to pending deliveries.</p>
+      <p>Assign drivers and vehicles to deliveries.</p>
     </div>
     <a routerLink="/assignments/new" class="btn btn--primary">New assignment</a>
   </div>
@@ -13,6 +13,10 @@
 
   @if (error()) {
     <p class="error">{{ error() }}</p>
+  }
+
+  @if (notice()) {
+    <p class="notice">{{ notice() }}</p>
   }
 
   @if (!loading() && !error()) {
@@ -39,6 +43,9 @@
               </td>
               <td>{{ assignment.assignedAt | date: 'short' }}</td>
               <td class="actions">
+                <button type="button" (click)="toggleDetails(assignment)">
+                  {{ detailsFor() === assignment.id ? 'Hide' : 'Details' }}
+                </button>
                 @if (canStart(assignment)) {
                   <button type="button" (click)="updateStatus(assignment, 'IN_PROGRESS')">Start</button>
                 }
@@ -54,6 +61,37 @@
                 }
               </td>
             </tr>
+            @if (detailsFor() === assignment.id) {
+              <tr class="details-row">
+                <td colspan="6">
+                  @if (detailsLoading()) {
+                    <p class="details-loading">Loading live details…</p>
+                  }
+                  @if (details(); as d) {
+                    <div class="details-panel">
+                      <div class="details-card">
+                        <h3>Driver</h3>
+                        <p>{{ d.driver.firstName }} {{ d.driver.lastName }}</p>
+                        <p>{{ d.driver.email }}</p>
+                        <lib-status-badge [label]="d.driver.status" [tone]="d.driver.status | statusTone" />
+                      </div>
+                      <div class="details-card">
+                        <h3>Vehicle</h3>
+                        <p>{{ d.vehicle.licensePlate }}</p>
+                        <p>{{ d.vehicle.brand }} {{ d.vehicle.model }}</p>
+                        <lib-status-badge [label]="d.vehicle.status" [tone]="d.vehicle.status | statusTone" />
+                      </div>
+                      <div class="details-card">
+                        <h3>Delivery #{{ d.delivery.id }}</h3>
+                        <p>From: {{ d.delivery.pickupAddress }}</p>
+                        <p>To: {{ d.delivery.deliveryAddress }}</p>
+                        <lib-status-badge [label]="d.delivery.status" [tone]="d.delivery.status | statusTone" />
+                      </div>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
           } @empty {
             <tr>
               <td colspan="6">No assignments found.</td>
