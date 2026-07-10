@@ -353,9 +353,20 @@ services:
     depends_on:
       - gateway
 
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: docs
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    networks:
+      - deliverx-network
+
 networks:
   deliverx-network:
-    driver: bridge
+    driver: bridge    
 
 volumes:
   mysql_data:
