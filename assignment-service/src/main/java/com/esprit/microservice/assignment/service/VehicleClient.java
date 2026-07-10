@@ -1,4 +1,4 @@
-package com.esprit.microservice.assignment.client;
+package com.esprit.microservice.assignment.service;
 
 import com.esprit.microservice.assignment.dto.VehicleDTO;
 import org.springframework.cloud.openfeign.FeignClient;

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL, API_ROUTES } from '../config/api.config';
-import { Assignment, AssignmentStatus } from '../models/assignment.model';
+import { Assignment, AssignmentDetails, AssignmentStatus } from '../models/assignment.model';
 
 @Injectable({ providedIn: 'root' })
 export class AssignmentApiService {
@@ -15,6 +15,10 @@ export class AssignmentApiService {
 
   getById(id: number): Observable<Assignment> {
     return this.http.get<Assignment>(`${this.baseUrl}/${id}`);
+  }
+
+  getDetails(id: number): Observable<AssignmentDetails> {
+    return this.http.get<AssignmentDetails>(`${this.baseUrl}/${id}/details`);
   }
 
   create(assignment: Assignment): Observable<Assignment> {
