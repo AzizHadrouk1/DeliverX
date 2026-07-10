@@ -1,0 +1,61 @@
+<section class="form-page">
+  <a routerLink="/clients">← Back to clients</a>
+  <h1>{{ isEdit ? 'Edit client' : 'Add client' }}</h1>
+
+  <form (ngSubmit)="submit()">
+    <div class="grid">
+      <label>
+        First name
+        <input [(ngModel)]="client.firstName" name="firstName" required />
+      </label>
+      <label>
+        Last name
+        <input [(ngModel)]="client.lastName" name="lastName" required />
+      </label>
+      <label>
+        Email
+        <input type="email" [(ngModel)]="client.email" name="email" required />
+      </label>
+      <label>
+        Phone
+        <input [(ngModel)]="client.phone" name="phone" required />
+      </label>
+      <label>
+        Company name
+        <input [(ngModel)]="client.companyName" name="companyName" />
+      </label>
+      <label>
+        Address
+        <input [(ngModel)]="client.address" name="address" required />
+      </label>
+      <label>
+        City
+        <input [(ngModel)]="client.city" name="city" required />
+      </label>
+      <label>
+        Type
+        <select [(ngModel)]="client.type" name="type" required>
+          @for (type of types; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Status
+        <select [(ngModel)]="client.status" name="status" required>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <button type="submit" class="btn" [disabled]="saving()">
+      {{ saving() ? 'Saving...' : 'Save client' }}
+    </button>
+  </form>
+</section>

@@ -1,0 +1,62 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.85rem;
+  margin-top: 1.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.actions button {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.actions button.danger {
+  border: 0;
+  background: transparent;
+  color: #b91c1c;
+  padding: 0;
+}
+
+.btn--primary {
+  display: inline-flex;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.55rem;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.error {
+  color: #b91c1c;
+}

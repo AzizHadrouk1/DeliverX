@@ -1,0 +1,66 @@
+<section>
+  <div class="header">
+    <div>
+      <h1>Assignment management</h1>
+      <p>Assign drivers and vehicles to pending deliveries.</p>
+    </div>
+    <a routerLink="/assignments/new" class="btn btn--primary">New assignment</a>
+  </div>
+
+  @if (loading()) {
+    <lib-loading-state />
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error()) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Delivery</th>
+            <th>Driver</th>
+            <th>Vehicle</th>
+            <th>Status</th>
+            <th>Assigned at</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (assignment of assignments(); track assignment.id) {
+            <tr>
+              <td>#{{ assignment.deliveryId }}</td>
+              <td>{{ driverName(assignment.driverId) }}</td>
+              <td>{{ vehiclePlate(assignment.vehicleId) }}</td>
+              <td>
+                <lib-status-badge [label]="assignment.status!" [tone]="assignment.status! | statusTone" />
+              </td>
+              <td>{{ assignment.assignedAt | date: 'short' }}</td>
+              <td class="actions">
+                @if (canStart(assignment)) {
+                  <button type="button" (click)="updateStatus(assignment, 'IN_PROGRESS')">Start</button>
+                }
+                @if (canComplete(assignment)) {
+                  <button type="button" (click)="updateStatus(assignment, 'COMPLETED')">Complete</button>
+                }
+                @if (canCancel(assignment)) {
+                  <button type="button" (click)="updateStatus(assignment, 'CANCELLED')">Cancel</button>
+                }
+                @if (canEditOrDelete(assignment)) {
+                  <a [routerLink]="['/assignments', assignment.id, 'edit']">Edit</a>
+                  <button type="button" class="danger" (click)="deleteAssignment(assignment.id!)">Delete</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6">No assignments found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

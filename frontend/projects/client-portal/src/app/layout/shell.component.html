@@ -10,9 +10,10 @@
   <nav class="nav">
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
     <a routerLink="/track" routerLinkActive="active">Track Package</a>
-    @if (auth.user()) {
-      <span class="user">{{ auth.user()?.name }}</span>
-      <button type="button" class="btn btn--ghost" (click)="auth.logout()">Logout</button>
+    @if (keycloak.authenticated) {
+      <a routerLink="/profile" routerLinkActive="active">My Profile</a>
+      <span class="user">{{ keycloak.tokenParsed?.['preferred_username'] }}</span>
+      <button type="button" class="btn btn--ghost" (click)="logout()">Logout</button>
     } @else {
       <a routerLink="/login" routerLinkActive="active">Login</a>
     }

@@ -1,0 +1,64 @@
+@if (loading()) {
+  <p class="status">Loading your profile…</p>
+} @else if (!client()) {
+  <p class="status status--error">{{ error() }}</p>
+}
+
+@if (client(); as c) {
+  <section class="panel">
+    <header>
+      <p class="eyebrow">My Account</p>
+      <h1>Profile</h1>
+      <p class="lead">Keep your contact details up to date. Your account type and status are managed by DeliverX.</p>
+    </header>
+
+    <form (ngSubmit)="submit()" class="form">
+      <div class="grid">
+        <label>
+          First name
+          <input type="text" name="firstName" [(ngModel)]="c.firstName" required />
+        </label>
+        <label>
+          Last name
+          <input type="text" name="lastName" [(ngModel)]="c.lastName" required />
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" [ngModel]="c.email" disabled />
+        </label>
+        <label>
+          Phone
+          <input type="tel" name="phone" [(ngModel)]="c.phone" required />
+        </label>
+        <label>
+          Company name
+          <input type="text" name="companyName" [(ngModel)]="c.companyName" />
+        </label>
+        <label>
+          City
+          <input type="text" name="city" [(ngModel)]="c.city" required />
+        </label>
+        <label class="grid__full">
+          Address
+          <input type="text" name="address" [(ngModel)]="c.address" required />
+        </label>
+      </div>
+
+      <div class="meta">
+        <span class="badge">{{ c.type }}</span>
+        <span class="badge">{{ c.status }}</span>
+      </div>
+
+      @if (error()) {
+        <p class="status status--error">{{ error() }}</p>
+      }
+      @if (saved()) {
+        <p class="status status--ok">Profile updated.</p>
+      }
+
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save changes' }}
+      </button>
+    </form>
+  </section>
+}
